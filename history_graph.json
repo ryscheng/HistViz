@@ -1,0 +1,61 @@
+{
+	"id": "n0",
+	"name": "Google search: 'lion'",
+	"data": {
+		"$color": "#83548B",
+		"$type": "circle",
+		"$dim": 20
+	},
+	"adjacencies": [
+		"n1", 
+		{
+			"nodeTo": "n0",
+			"nodeFrom": "n1",
+			"data": {
+				"$color": "#557EAA"
+			}
+		}, {
+			"nodeTo": "n0",
+			"nodeFrom": "n2",
+			"data": {
+				"$color": "#7EAA55"
+			}
+		}
+	]
+},{
+	"id": "n1",
+	"name": "Result: 'apple.com/lion'",
+	"data": {
+		"$color": "#835400",
+		"$type": "circle",
+		"$dim": 10
+	},
+	"adjacencies": [
+		"n1", 
+		{
+			"nodeTo": "n1",
+			"nodeFrom": "n0",
+			"data": {
+				"$color": "#557EAA"
+			}
+		}
+	]
+},{
+	"id": "n2",
+	"name": "Result: 'go-safari.com'",
+	"data": {
+		"$color": "#835400",
+		"$type": "circle",
+		"$dim": 10
+	},
+	"adjacencies": [
+		"n2", 
+		{
+			"nodeTo": "n2",
+			"nodeFrom": "n0",
+			"data": {
+				"$color": "#557EAA"
+			}
+		}
+	]
+}
