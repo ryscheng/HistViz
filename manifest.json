@@ -1,19 +1,17 @@
 {
 	"name": "HistViz",
-	"version": "1.0",
+	"version": "0.1",
 	"manifest_version": 2,
 	"description": "History Visualization extension (this is just a testing board version)",
 	"browser_action": {
 	},
-	"background": {
-		"scripts": ["jquery.min.js", "background.js"]
-	},
-	"content_scripts": [
-		{
-			"matches": ["http://*/*"],
-			"js": ["jquery.min.js", "graph_test.js"]
-		}
-	],
+	"background_page": "background.html",
+	//"content_scripts": [
+	//	{
+	//		"matches": ["http://*",],
+	//		"js": ["contentscript.js"]
+	//	}
+	//],
 	"permissions": [
 		"http://api.flickr.com/",
 		"http://ajax.googleapis.com/",
