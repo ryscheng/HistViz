@@ -5,7 +5,9 @@
 	"description": "History Visualization extension (this is just a testing board version)",
 	"browser_action": {
 	},
-	"background_page": "background.html",
+	"background": {
+    "scripts": ["jquery.min.js", "background.js"]
+  },
 	//"content_scripts": [
 	//	{
 	//		"matches": ["http://*",],
@@ -13,8 +15,7 @@
 	//	}
 	//],
 	"permissions": [
-		"http://api.flickr.com/",
-		"http://ajax.googleapis.com/",
+    "<all_urls>",
 		"tabs",
 		"history"
 	]
