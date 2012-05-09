@@ -125,6 +125,10 @@ a {
     max-width:500px;
 }
 
+#infovis-canvaswidget {
+  margin:25px 0 0 25px;
+}
+
 .tip-title {
   font-size: 11px;
   text-align:center;
