@@ -35,6 +35,6 @@ function startHistViz() {
   chrome.tabs.create({url:chrome.extension.getURL("graph_test.html")});
 }
 
-function printTab(tab) {
-  console.log(tab);
+function print(stuff) {
+  console.log(stuff);
 }

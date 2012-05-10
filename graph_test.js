@@ -369,7 +369,7 @@ function init(){
                 ctx.fillStyle = grad;
                 ctx.fillRect(x-width/2,y-height/2,x+width,y+height);
                 // var thumb = new Image();
-                // thumb.src = "thumb-google.png";
+                // thumb.src = "img/thumb-google.png";
                 // ctx.drawImage(thumb, pos.x-50, pos.y-50, 100, 100);
             }
         }

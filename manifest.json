@@ -6,7 +6,7 @@
 	"browser_action": {
 	},
 	"background": {
-    "scripts": ["jquery.min.js", "background.js"]
+    "scripts": ["js/jquery.min.js", "background.js"]
   },
 	//"content_scripts": [
 	//	{
