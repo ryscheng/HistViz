@@ -568,6 +568,12 @@ function init(){
           
           
           $jit.util.addEvent(domElement, 'click', function () {
+			  console.log("do search with: " + node.name)
+              console.log(node.getSubnodes())
+			  ht.graph.addAdjacence(node, {'id':'bholt', 'name':'Brandon', 'data':{'category':'page'}});
+			  ht.graph.addAdjacence(node, {'id':'ryscheng', 'name':'Ray', 'data':{'category':'page'}});
+              ht.graph.computeLevels("root");
+              ht.refresh(true);
               ht.onClick(node.id, {
                   onComplete: function() {
                       ht.controller.onComplete();
