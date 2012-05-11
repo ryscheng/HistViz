@@ -504,23 +504,69 @@ function init(){
       //Change node and edge styles such as
       //color, width and dimensions.
       Node: {
-          dim: 9,
-          color: "#f00",
-          type: (false)? "PageNode" : "circle",
-          overridable: true
+          dim: 20,
+		  type: 'circle',
+          color: "#bdf",
+          height: 50,
+          width: 75,
+          // autoHeight: true,
+          // autoWidth: true,
+          overridable: true,
+		  stylesHover: true
       },
       Edge: {
           lineWidth: 2,
-          color: "#088"
+          color: "#068"
       },
-      onBeforeCompute: function(node){
+	  NodeStyles: {
+		  enable: false,
+		  stylesHover: {
+			  dim: 25
+		  }
+	  },
+	  Label: {
+		  type: 'HTML'
+	  },
+      transition: $jit.Trans.Quart.easeInOut,
+      onBeforeCompute: function(node) {
           Log.write("centering");
       },
+	  onBeforePlotNode: function(node) {
+		  // console.log("onBeforePlotNode: " + node.data.category)
+		  if (node.data.category == "tag") {
+			  console.log(node.name + ": " + node.data.category)
+			  node.setData("color","#dfb");
+			  node.setData("type", "ellipse")
+		  } else if (node.data.category == "page") {
+			  node.setData("color","#fdb");
+		  }
+	  },
       //Attach event handlers and add text to the
       //labels. This method is only triggered on label
       //creation
       onCreateLabel: function(domElement, node){
-          domElement.innerHTML = node.name;
+          var lblhtml = "<div>" + node.name + "</div>";
+          // console.log(node.data.category)
+          if (node.data.category == "tag") {
+                        console.log(node.getPos())
+          } else if (node.data.category == "page") {
+                        console.log(node.getData("dim"))
+                        lblhtml += "<img src='img/thumb-google.png' width='" + node.getData("dim")*2 + "em' height='" + node.getData("dim")*2 + "em'></img>"
+          }
+                    domElement.innerHTML =  lblhtml;
+          // 
+          // var pos = node.pos.getc(true), nconfig = this.node, data = node.data;
+          // var width  = nconfig.width, height = nconfig.height;
+          // // var algnPos = this.getAlignedPos(pos, width, height);
+          // var x = pos.x * 100, y = pos.y * 100;
+          // var ctx = domElement.canvas.getCtx();
+          // var grad = ctx.createLinearGradient(0,0,0,height);
+          // grad.addColorStop(0,"#aaaaaa");
+          // grad.addColorStop(1,"#444444");
+          // ctx.fillStyle = grad;
+          // ctx.fillRect(x-width/2,y-height/2,x+width,y+height);
+          
+          
           $jit.util.addEvent(domElement, 'click', function () {
               ht.onClick(node.id, {
                   onComplete: function() {
@@ -535,15 +581,20 @@ function init(){
           var style = domElement.style;
           style.display = '';
           style.cursor = 'pointer';
+		  style.backgroundColor = "#D2D2D2";
           if (node._depth == 0) {
+			  style.size = 15;
               style.fontSize = "1.0em";
-              style.color = "#fff";
+              style.color = "#000000";
+			  style.backgroundColor = "#F2F2F2";
           } else if (node._depth <= 1) {
               style.fontSize = "0.8em";
               style.color = "#ddd";
+			  style.backgroundColor = "#777";
           } else if(node._depth == 2){
               style.fontSize = "0.7em";
               style.color = "#555";
+			  style.backgroundColor = "#222";
           } else {
 			  // style.fontSize = "0.4em";
 			  // style.color = "#333";
