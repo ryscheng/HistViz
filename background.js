@@ -33,11 +33,18 @@ function searchDeliciousUrl(domain, title, url) {
     }
     for (var i=1; i<taglinks.length; i++) {
       var taglink = taglinks[i].text;
-      tagStr = tagStr + " " + taglink;
+      if (taglink != "") {
+        tagStr = tagStr + " " + taglink;
+      }
     }
+    var regex = /[^a-z0-9 ]/gi;
+    title = title.replace(regex, "");
     var titleArr = title.split(" ");
+    console.log(titleArr);
     for (var i=0;i<titleArr.length;i++) {
-      tagStr = tagStr + " " + titleArr[i];
+      if (titleArr[i] != "") {
+        tagStr = tagStr + " " + titleArr[i];
+      }
     }
 
     console.log(tagStr);  
