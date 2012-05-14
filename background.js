@@ -1,5 +1,6 @@
 init();
 var histviztab;
+var current_screenshot;
 
 function init() {
   console.log("HistViz init()");
@@ -9,6 +10,11 @@ function init() {
 function startHistViz(tab) {
   // extract keywords from the current page
   chrome.tabs.query({active: true, windowId: chrome.windows.WINDOW_ID_CURRENT}, getKeywordsFromTab);
+  
+  chrome.tabs.captureVisibleTab(function(dataurl) {
+  	current_screenshot = dataurl;
+  });
+  
   // open HistViz as a tab next to the current one
   chrome.tabs.create({url:chrome.extension.getURL("graph_test.html"), index:tab.index+1}, setHistVizTab);
 }
@@ -50,7 +56,7 @@ function searchDeliciousUrl(domain, title, url) {
     }
 
     console.log(tagStr);  
-    chrome.tabs.sendRequest(histviztab.id, {root: true, domain: domain, title: title, url: url, tags: tagStr});
+    chrome.tabs.sendRequest(histviztab.id, {root: true, domain: domain, title: title, url: url, tags: tagStr, screenshot: current_screenshot});
   }
   var deliciousUrl = "http://delicious.com/url/"+domain;
   console.log("Retrieving tags from "+deliciousUrl)

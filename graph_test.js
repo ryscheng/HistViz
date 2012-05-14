@@ -1,5 +1,6 @@
 var labelType, useGradients, nativeTextSupport, animate;
 
+var screenshotURL;
 (function() {
   var ua = navigator.userAgent,
       iStuff = ua.match(/iPhone/i) || ua.match(/iPad/i),

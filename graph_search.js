@@ -13,6 +13,7 @@ function addKeyWords(request, sender, sendResponse) {
     rootUrl = request.url;
     rootTitle = request.title;
   }
+  screenshotURL = request.screenshot;
   var tags = request.tags.split(" ");
   for (var i=0; i<tags.length; i++) {
     searchQuery.push(tags[i]);
