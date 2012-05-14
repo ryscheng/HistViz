@@ -1,7 +1,23 @@
 var labelType, useGradients, nativeTextSupport, animate;
 
 var ht;
+var backNode;
 var screenshotURL;
+
+Date.prototype.format = function() {
+    var m_names = new Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec");
+    return m_names[this.getMonth()] + ' ' + this.getDate() + ', ' + this.getFullYear();
+}
+
+String.prototype.supplant = function (o) {
+    return this.replace(/{([^{}]*)}/g,
+        function (a, b) {
+            var r = o[b];
+            return typeof r === 'string' || typeof r === 'number' ? r : a;
+        }
+    );
+};
+
 (function() {
   var ua = navigator.userAgent,
       iStuff = ua.match(/iPhone/i) || ua.match(/iPad/i),
@@ -32,7 +48,7 @@ $jit.Graph.Node.prototype.depthScale = function() {
 }
 
 function receiveHistoryResultsForNode(node, items) {
-    
+     
 }
 
 function receiveHistoryResults(items) {
@@ -118,7 +134,8 @@ function init(){
           // autoHeight: true,
           // autoWidth: true,
           overridable: true,
-		  stylesHover: true
+          // stylesHover: true,
+          transform: true
       },
       Edge: {
           lineWidth: 2,
@@ -133,6 +150,15 @@ function init(){
 	  Label: {
 		  type: 'HTML'
 	  },
+      // Tips: {  
+      //   enable: true,  
+      //   type: 'Native',  
+      //   offsetX: 10,  
+      //   offsetY: 10,  
+      //   onShow: function(tip, node) {
+      //     tip.innerHTML = node.data.url;  
+      //   }  
+      // },
       transition: $jit.Trans.Quart.easeInOut,
       onBeforeCompute: function(node) {
           Log.write("centering");
@@ -140,9 +166,11 @@ function init(){
 	  onBeforePlotNode: function(node) {
 		  // console.log("onBeforePlotNode: " + node.data.category)
 		  if (node.data.category == "tag") {
-			  console.log(node.name + ": " + node.data.category)
+              // console.log(node.name + ": " + node.data.category)
 			  node.setData("color","#dfb");
-			  node.setData("type", "ellipse")
+			  node.setData("type", "ellipse");
+              node.setData("width", 75*node.depthScale());
+              node.setData("height", 50*node.depthScale());
 		  } else if (node.data.category == "page") {
 			  node.setData("color","#fdb");
 		  }
@@ -151,15 +179,31 @@ function init(){
       //labels. This method is only triggered on label
       //creation
       onCreateLabel: function(domElement, node){
-          var lblhtml = "<div>" + node.name + "</div>";
+          var lblhtml; // = "<div style='font-size:1.0em'>" + node.name + "</div>";
           // console.log(node.data.category)
           if (node.data.category == "tag") {
-                        console.log(node.getPos())
+              // console.log(node.getPos())
+              
           } else if (node.data.category == "page") {
-                        console.log(node.getData("dim"))
-                        lblhtml += "<img src='img/thumb-google.png' width='" + node.getData("dim")*2 + "em' height='" + node.getData("dim")*2 + "em'></img>"
+              lblhtml = ''+
+              '<div title='+node.data.url+' style="width:'+130*node.depthScale()+'px;' +
+              ' border-style:solid; border-width:2px; border-color:#444" >' +
+              '  <div style="font-size:'+1.0*node.depthScale()+'em; font-weight:bold">' +
+              '       <img src="chrome://favicon/' + node.data.url + '" />' +
+              '       '+node.name+'' +
+              '   </div>' +
+              '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
+              '    '+node.data.visited_date+'' +
+              '   </div>' +
+              '</div>' +
+              '</a>';
+              // console.log(node.getData("dim"))
+              // lblhtml += "<img src='img/thumb-google.png' width='" + node.getData("dim")*2 + "em' height='" + node.getData("dim")*2 + "em'></img>"
+              // lblhtml += "<img src='img/thumb-google.png' class=node_thumbnail></img>"
+              // lblhtml += "<img src='chrome://favicon/" + node.data.url + "'></img>"
+              // lblhtml += "<div style='font-size:0.5em; font-weight:lighter'>" + node.data.visited_date + " - " + node.data.visited_time + "</div>"
           }
-                    domElement.innerHTML =  lblhtml;
+            domElement.innerHTML =  lblhtml;
           // 
           // var pos = node.pos.getc(true), nconfig = this.node, data = node.data;
           // var width  = nconfig.width, height = nconfig.height;
@@ -175,36 +219,71 @@ function init(){
           
           $jit.util.addEvent(domElement, 'click', function () {
 			  console.log("do search with: " + node.name)
-              console.log(node.getSubnodes())
-			  ht.graph.addAdjacence(node, {'id':'bholt', 'name':'Brandon', 'data':{'category':'page'}});
-			  ht.graph.addAdjacence(node, {'id':'ryscheng', 'name':'Ray', 'data':{'category':'page'}});
-              ht.graph.computeLevels("root");
-              ht.refresh(true);
-              ht.onClick(node.id, {
-                  onComplete: function() {
-                      ht.controller.onComplete();
-                  }
+              // var n = {};
+              // n.id = 'bholt';
+              // n.name = 'Brandon';
+              // n.data = {};
+              // n.data.category = 'page';
+              // n.data.visited_date = 'yesterday';
+              // n.data.visited_time = 'never';
+              // ht.graph.addAdjacence(node, n);
+              
+              // console.log(node.getSubnodes())
+              // ht.graph.addAdjacence(node, {'id':'bholt', 'name':'Brandon', 'data':{'category':'page'}});
+              // ht.graph.addAdjacence(node, {'id':'ryscheng', 'name':'Ray', 'data':{'category':'page'}});
+              // ht.graph.computeLevels("root");
+              // ht.refresh(true);
+              // receiveHistoryResults();
+              chrome.tabs.getCurrent(function(tab) {
+                  chrome.tabs.create({
+                      url:node.data.url,
+                      index: tab.index+1
+                  })
               });
+              
+              // update graph visualization...
+              // ht.onClick(node.id, {
+              //     onComplete: function() {
+              //         ht.controller.onComplete();
+              //     }
+              // });
           });
       },
       //Change node styles when labels are placed
       //or moved.
       onPlaceLabel: function(domElement, node){
+          if (node.id == "root" && node.data.alreadySet != true) {
+              node.data.alreadySet = true;
+              var lblhtml = ''+
+              '<div style="positioning:relative; top:-100px; width:'+200+'px; ' +
+              'border-style:solid; border-width:2px; border-color:#444" >' +
+              '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
+              '       '+node.name+'' +
+              '  </div>' +
+              '  <img src="'+ screenshotURL + '" width=100% />' +
+              // '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
+              // '    '+node.data.visited_date+'' +
+              // '   </div>' +
+              '</div>';
+              domElement.innerHTML = lblhtml;
+          }
+          
           var style = domElement.style;
           style.display = '';
           style.cursor = 'pointer';
+          style.opacity = 1.0;
 		  style.backgroundColor = "#D2D2D2";
           if (node._depth == 0) {
 			  style.size = 15;
-              style.fontSize = "1.0em";
+              // style.fontSize = "1.0em";
               style.color = "#000000";
 			  style.backgroundColor = "#F2F2F2";
           } else if (node._depth <= 1) {
-              style.fontSize = "0.8em";
+              // style.fontSize = "0.8em";
               style.color = "#ddd";
 			  style.backgroundColor = "#777";
           } else if(node._depth == 2){
-              style.fontSize = "0.7em";
+              // style.fontSize = "0.7em";
               style.color = "#555";
 			  style.backgroundColor = "#222";
           } else {
@@ -224,26 +303,26 @@ function init(){
           //Build the right column relations list.
           //This is done by collecting the information (stored in the data property) 
           //for all the nodes adjacent to the centered node.
-          var node = ht.graph.getClosestNodeToOrigin("current");
-          console.log(node)
-        
-          var html = "<h4>" + node.name + "</h4><b>Connections:</b>";
-          html += "<ul>";
-          node.eachAdjacency(function(adj){
-              var child = adj.nodeTo;
-              if (child.data) {
-                  var rel = (child.data.band == node.name) ? child.data.relation : node.data.relation;
-                  html += "<li>" + child.name + " " + "<div class=\"relation\">(relation: " + rel + ")</div></li>";
-              }
-          });
-          html += "</ul>";
-          $jit.id('inner-details').innerHTML = html;
+          // var node = ht.graph.getClosestNodeToOrigin("current");
+          // console.log(node)
+          //         
+          // var html = "<h4>" + node.name + "</h4><b>Connections:</b>";
+          // html += "<ul>";
+          // node.eachAdjacency(function(adj){
+          //     var child = adj.nodeTo;
+          //     if (child.data) {
+          //         var rel = (child.data.band == node.name) ? child.data.relation : node.data.relation;
+          //         html += "<li>" + child.name + " " + "<div class=\"relation\">(relation: " + rel + ")</div></li>";
+          //     }
+          // });
+          // html += "</ul>";
+          // $jit.id('inner-details').innerHTML = html;
       }
     });
     //load JSON data.
     ht.loadJSON(json_empty);
     //compute positions and plot.
-    ht.refresh();
+    ht.refresh(true);
     //end
     ht.controller.onComplete();
 }
