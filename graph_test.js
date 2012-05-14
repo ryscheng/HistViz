@@ -644,3 +644,6 @@ function init(){
 
 window.onload = init;
 
+function rayPrint(msg) {
+  console.log("RAY SENDS:"+msg);
+}
