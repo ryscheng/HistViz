@@ -25,13 +25,21 @@ function getKeywordsFromTab(tabs) {
 
 function searchDeliciousUrl(domain, title, url) {
   function parseDomForTags(dom) {
-    var taglinks = $("a[rel='tag']",dom);
     var tagStr = "";
+    var taglinks = $("a[rel='tag']",dom);
     //console.log(taglinks)
-    for (var i=0; i<taglinks.length; i++) {
+    if (taglinks.length>0) {
+      tagStr = taglinks[0].text;
+    }
+    for (var i=1; i<taglinks.length; i++) {
       var taglink = taglinks[i].text;
       tagStr = tagStr + " " + taglink;
     }
+    var titleArr = title.split(" ");
+    for (var i=0;i<titleArr.length;i++) {
+      tagStr = tagStr + " " + titleArr[i];
+    }
+
     console.log(tagStr);  
     chrome.tabs.sendRequest(histviztab.id, {root: true, domain: domain, title: title, url: url, tags: tagStr});
   }
