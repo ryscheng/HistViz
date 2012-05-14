@@ -52,3 +52,9 @@ function sendTopResults() {
   }
   receiveHistoryResults(result);
 }
+
+function runSearchFromNode(node) {
+	console.log("tag: " + node.name);
+	
+	receiveHistoryResultsForNode(node, []);
+}

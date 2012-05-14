@@ -25,6 +25,10 @@ var Log = {
   }
 };
 
+function receiveHistoryResultsForNode(node, items) {
+    
+}
+
 function receiveHistoryResults(items) {
   console.log(items);
     
