@@ -20,10 +20,10 @@ function getKeywordsFromTab(tabs) {
   var tab = tabs[0];
   console.log("Current Window is URL="+tab.url+", Title="+tab.title);
   var domains = tab.url.split("/");
-  searchDeliciousUrl(domains[2]);
+  searchDeliciousUrl(domains[2], tab.title, tab.url);
 }
 
-function searchDeliciousUrl(url) {
+function searchDeliciousUrl(domain, title, url) {
   function parseDomForTags(dom) {
     var taglinks = $("a[rel='tag']",dom);
     var tagStr = "";
@@ -33,9 +33,9 @@ function searchDeliciousUrl(url) {
       tagStr = tagStr + " " + taglink;
     }
     console.log(tagStr);  
-    chrome.tabs.sendRequest(histviztab.id, {tags: tagStr});
+    chrome.tabs.sendRequest(histviztab.id, {root: true, domain: domain, title: title, url: url, tags: tagStr});
   }
-  var deliciousUrl = "http://delicious.com/url/"+url;
+  var deliciousUrl = "http://delicious.com/url/"+domain;
   console.log("Retrieving tags from "+deliciousUrl)
   $.get(deliciousUrl, {}, parseDomForTags);
 }

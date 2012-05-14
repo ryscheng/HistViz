@@ -26,6 +26,7 @@ var Log = {
 };
 
 function receiveHistoryResults(items) {
+  console.log(items);
     
 }
 
