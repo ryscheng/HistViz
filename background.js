@@ -7,8 +7,10 @@ function init() {
 }
 
 function startHistViz(tab) {
+  // extract keywords from the current page
   chrome.tabs.query({active: true, windowId: chrome.windows.WINDOW_ID_CURRENT}, getKeywordsFromTab);
-  chrome.tabs.create({url:chrome.extension.getURL("graph_test.html")}, setHistVizTab);
+  // open HistViz as a tab next to the current one
+  chrome.tabs.create({url:chrome.extension.getURL("graph_test.html"), index:tab.index+1}, setHistVizTab);
 }
 
 function setHistVizTab(tab) {
