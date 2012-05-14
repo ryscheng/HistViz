@@ -17,8 +17,8 @@ function addKeyWords(request, sender, sendResponse) {
   for (var i=0; i<tags.length; i++) {
     searchQuery.push(tags[i]);
     console.log("Searching for "+tags[i]);
-    chrome.history.search({text: tags[i], maxResults: MAX_SEARCH_RESULTS}, function(results) {
-      finishedQueries = finishedQueries + 1;
+    chrome.history.search({text: tags[i], startTime: 0, maxResults: MAX_SEARCH_RESULTS}, function(results) {
+	  finishedQueries = finishedQueries + 1;
       for (var i=0; i< results.length; i++) {
         var item = results[i];
         if (!searchResults.hasOwnProperty(item.url)) {
