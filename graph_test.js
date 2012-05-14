@@ -1,5 +1,6 @@
 var labelType, useGradients, nativeTextSupport, animate;
 
+var ht;
 var screenshotURL;
 (function() {
   var ua = navigator.userAgent,
@@ -26,13 +27,46 @@ var Log = {
   }
 };
 
+$jit.Graph.Node.prototype.depthScale = function() {
+    return (4-this._depth)/4;
+}
+
 function receiveHistoryResultsForNode(node, items) {
     
 }
 
 function receiveHistoryResults(items) {
-  console.log(items);
+    console.log("receiveHistoryResults() called")
+    console.log(items);
     
+    if (items[0].id != 'root') console.log("Error: First item not root!");
+    
+    // var rootNode = {"id":items[0].id, "name":items[0].title, "data":{"url":items[0].url}};
+    var rootNode = ht.graph.getNode("root");
+    rootNode.name = items[0].title;
+    rootNode.data = {
+        url: items[0].url
+    }
+    
+    for (var i=1; i<items.length; i++) {
+        if (items[i].tag) { // if it's a tag
+            // do nothing for now
+        } else {
+            var d = new Date(items[i].lastVisitTime);
+            var n = {
+                "id": items[i].id,
+                "name": items[i].title,
+                "data": {
+                    "category": 'page',
+                    "url": items[i].url,
+                    "visited_date": d.format()
+                }
+            };        
+            ht.graph.addAdjacence(rootNode, n);
+        }
+    }
+    ht.graph.computeLevels('root');
+    ht.refresh(true);
 }
 
 function init(){
@@ -67,7 +101,7 @@ function init(){
     });
     
     //init Hypertree
-    var ht = new $jit.Hypertree({
+    ht = new $jit.Hypertree({
       //id of the visualization container
       injectInto: 'infovis',
       //canvas width and height
