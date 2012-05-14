@@ -25,6 +25,10 @@ var Log = {
   }
 };
 
+function receiveHistoryResults(items) {
+    
+}
+
 function init(){
     //init data
     var json_old = {
