@@ -47,8 +47,19 @@ function sendTopResults() {
     return b.count-a.count;
   });
   result.push({id: "root", url: rootUrl, title: rootTitle});
-  for (var i=0; i<MAX_DRAW_RESULTS; i++) {
-    result.push(searchResults[counts[i].url][0]);
+  var length = MAX_DRAW_RESULTS;
+  if (counts.length < length) {
+    length = counts.length;
+  }
+  for (var i=0; i<length; i++) {
+    var item = searchResults[counts[i].url][0];
+    item.type = "page";
+    result.push(item);
+  }
+  for (var i=0; i<searchQuery.length; i++) {
+    result.push({tag: searchQuery[i], type: "tag"});
   }
   receiveHistoryResults(result);
 }
+
+
