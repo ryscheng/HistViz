@@ -7,6 +7,9 @@ var searchQuery = [];
 var finishedQueries = 0;
 var searchResults = new Object();
 
+var availableTags = [];
+var navigationStack = [];
+
 function addKeyWords(request, sender, sendResponse) {
   console.log("Got new keywords: " + request);
   if (request.root) {
@@ -65,6 +68,8 @@ function sendTopResults() {
 
 function runSearchFromNode(node) {
 	console.log("tag: " + node.name);
+
 	
+
 	receiveHistoryResultsForNode(node, []);
 }
