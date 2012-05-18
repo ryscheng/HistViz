@@ -1,5 +1,9 @@
-chrome.extension.onRequest.addListener(addKeyWords);
-MAX_SEARCH_RESULTS=10;
+//chrome.extension.onRequest.addListener(addKeyWords);
+//chrome.extension.onRequest.addListener(initialKeywords);
+chrome.extension.onRequest.addListener(handleRequests);
+
+MAX_SEARCH_RESULTS=4;
+NUM_TAGS=7;
 MAX_DRAW_RESULTS=10;
 var rootUrl = "";
 var rootTitle = ""; 
@@ -7,14 +11,37 @@ var searchQuery = [];
 var finishedQueries = 0;
 var searchResults = new Object();
 
-var availableTags = [];
+var availableTags = {};
 var navigationStack = [];
+
+function handleRequests(request, sender, sendResponse) {
+	if (request.receiver == "rootScreenshot") {
+		receiveRootScreenshot(request.screenshot);
+	} else if (request.receiver == "initialKeywords") {
+		initialKeywords(request, sender, sendResponse);
+	}
+}
+
+function initialKeywords(request, sender, sendResponse) {
+	console.log("Got new keywords: " + request);
+
+	if (request.root) {
+		var root = { id: 'root', title: request.title, url: request.url, screenshot: request.screenshot };
+		var tags = request.tags.split(" ");
+		for (var i=0; i<tags.length; i++) {
+			// choose the first tags that come (ranking them might be preferable)
+			availableTags[tags[i].toLowerCase()] = (i<NUM_TAGS)?true:false;
+		}
+		receiveRoot(root); //notify graph_test that it can start loading tags
+	}
+}
 
 function addKeyWords(request, sender, sendResponse) {
   console.log("Got new keywords: " + request);
   if (request.root) {
     rootUrl = request.url;
     rootTitle = request.title;
+	rootScreenshot = request.screenshot;
   }
   screenshotURL = request.screenshot;
   var tags = request.tags.split(" ");
@@ -37,7 +64,7 @@ function addKeyWords(request, sender, sendResponse) {
   }
 }
 
-function sendTopResults() {
+function sendTopResults() { 
   console.log(searchResults);
   
   var counts = [];
@@ -67,9 +94,18 @@ function sendTopResults() {
 }
 
 function runSearchFromNode(node) {
-	console.log("tag: " + node.name);
+	var query = node.name;
+	for (var i=0; i<navigationStack.length; i++) { query += ' ' + navigationStack[i]; }
+	console.log("query: " + query);
 
-	
-
-	receiveHistoryResultsForNode(node, []);
+	chrome.history.search({text: query, startTime: 0, maxResults: MAX_SEARCH_RESULTS}, function(results) {
+		var qr = [];
+		for (var i=0; i<results.length; i++) {
+			var r = results[i];
+			r.type = "page";
+			qr.push(r);
+		}
+		receiveHistoryResultsForNode(node, qr);
+	});
 }
+

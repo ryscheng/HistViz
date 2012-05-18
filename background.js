@@ -13,6 +13,7 @@ function startHistViz(tab) {
   
   chrome.tabs.captureVisibleTab(function(dataurl) {
   	current_screenshot = dataurl;
+    chrome.tabs.sendRequest(histviztab.id, {receiver:'rootScreenshot', screenshot:dataurl });
   });
   
   // open HistViz as a tab next to the current one
@@ -51,12 +52,12 @@ function searchDeliciousUrl(domain, title, url) {
     console.log(titleArr);
     for (var i=0;i<titleArr.length;i++) {
       if (titleArr[i] != "") {
-        tagStr = tagStr + " " + titleArr[i];
+        tagStr = titleArr[i] + " " + tagStr;
       }
     }
 
     console.log(tagStr);  
-    chrome.tabs.sendRequest(histviztab.id, {root: true, domain: domain, title: title, url: url, tags: tagStr, screenshot: current_screenshot});
+    chrome.tabs.sendRequest(histviztab.id, {receiver:'initialKeywords', root: true, domain: domain, title: title, url: url, tags: tagStr, screenshot: current_screenshot});
   }
   var deliciousUrl = "http://delicious.com/url/"+domain;
   console.log("Retrieving tags from "+deliciousUrl)

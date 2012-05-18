@@ -4,6 +4,8 @@ var ht;
 var backNode;
 var screenshotURL;
 
+var callbackAfterInit = [];
+
 Date.prototype.format = function() {
     var m_names = new Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec");
     return m_names[this.getMonth()] + ' ' + this.getDate() + ', ' + this.getFullYear();
@@ -17,6 +19,16 @@ String.prototype.supplant = function (o) {
         }
     );
 };
+
+Array.prototype.include = function(item) {
+	for (var i=0; i<this.length; i++) {
+		if (this[i] == item) {
+			return true;
+		}
+	}
+	return false;
+};
+
 
 (function() {
   var ua = navigator.userAgent,
@@ -32,6 +44,17 @@ String.prototype.supplant = function (o) {
   useGradients = nativeCanvasSupport;
   animate = !(iStuff || !nativeCanvasSupport);
 })();
+
+String.prototype.hashCode = function(){
+	var hash = 0;
+	if (this.length == 0) return hash;
+	for (i = 0; i < this.length; i++) {
+		c = this.cCodeAt(i);
+		hash = ((hash<<5)-hash)+c;
+		hash = hash & hash; // Convert to 32bit integer
+	}
+	return hash;
+}
 
 var Log = {
   elem: false,
@@ -83,6 +106,88 @@ function receiveHistoryResults(items) {
     }
     ht.graph.computeLevels('root');
     ht.refresh(true);
+}
+
+function receiveRootScreenshot(screenshot) {
+	var root = ht.graph.getNode("root");
+	root.data.screenshot = screenshot;
+	root.data.alreadySet = false;
+	ht.refresh(true);
+}
+
+function addTagChildren(parentNode, tags) {
+	for (var t in tags) {
+		if (tags[t] && !navigationStack.include(t)) {
+			var n = {
+				"id": parentNode.id + t,
+				"name": t,
+				"data": {
+					"category": "tag"
+				}
+			};
+			ht.graph.addAdjacence(parentNode, n);
+			runSearchFromNode(n);
+		}
+	}
+}
+
+function receiveRoot(root) {
+	// at this point, tags are also loaded into 'graph_search.js::availableTags'
+	console.log("received root: " + root + ", availableTags:");
+	console.log(availableTags);
+
+	var w = function() {
+	    var rootNode = ht.graph.getNode("root");
+	    rootNode.name = root.title;
+	    rootNode.data = {
+	        url: root.url,
+			screenshot: root.screenshot
+	    }
+		Log.write("loading");
+		ht.refresh(true);
+	
+		addTagChildren(rootNode, availableTags);
+	};
+
+	if (ht) {
+		w();
+	} else {
+		callbackAfterInit.push(w);
+	}
+}
+
+function receiveHistoryResultsForNode(parentNode, items) {
+	console.log("results " + parentNode.name + "(" + items.length + ")");
+	if (items.length == 0) {
+		//remove node if no matches
+		console.log("remove node " + parentNode.name);
+		ht.graph.removeNode(parentNode.id);
+		ht.labels.disposeLabel(parentNode.id);
+	}
+	for (var i=0; i<items.length; i++) {
+		if (items[i].tag) { // if it's a tag
+			// do nothing for now
+		} else {
+			var id = items[i].id;
+			var n;
+			//if (ht.graph.hasNode(id)) {
+			//	n = ht.graph.getNode(id);
+			//} else {
+				var d = new Date(items[i].lastVisitTime);
+				n = {
+					'id': parentNode.id + '.' + items[i].id,
+					'name': items[i].title,
+					'data': {
+						'category': 'page',
+						'url': items[i].url,
+						'visited_date': d.format()
+					}
+				};
+			//}
+			ht.graph.addAdjacence(parentNode, n);
+		}
+	}
+	ht.refresh(true);
 }
 
 function init(){
@@ -183,20 +288,19 @@ function init(){
           // console.log(node.data.category)
           if (node.data.category == "tag") {
               // console.log(node.getPos())
-              
+             lblhtml = node.name 
           } else if (node.data.category == "page") {
               lblhtml = ''+
-              '<div title='+node.data.url+' style="width:'+130*node.depthScale()+'px;' +
+              '<div title='+node.data.url+' style="width:'+200*node.depthScale()+'px;' +
               ' border-style:solid; border-width:2px; border-color:#444" >' +
+              '  <img src="chrome://favicon/' + node.data.url + '" />' +
               '  <div style="font-size:'+1.0*node.depthScale()+'em; font-weight:bold">' +
-              '       <img src="chrome://favicon/' + node.data.url + '" />' +
               '       '+node.name+'' +
               '   </div>' +
               '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
               '    '+node.data.visited_date+'' +
               '   </div>' +
-              '</div>' +
-              '</a>';
+              '</div>';
               // console.log(node.getData("dim"))
               // lblhtml += "<img src='img/thumb-google.png' width='" + node.getData("dim")*2 + "em' height='" + node.getData("dim")*2 + "em'></img>"
               // lblhtml += "<img src='img/thumb-google.png' class=node_thumbnail></img>"
@@ -234,19 +338,24 @@ function init(){
               // ht.graph.computeLevels("root");
               // ht.refresh(true);
               // receiveHistoryResults();
-              chrome.tabs.getCurrent(function(tab) {
-                  chrome.tabs.create({
-                      url:node.data.url,
-                      index: tab.index+1
-                  })
-              });
-              
-              // update graph visualization...
-              // ht.onClick(node.id, {
-              //     onComplete: function() {
-              //         ht.controller.onComplete();
-              //     }
-              // });
+
+			if (node.category == "page") {
+				chrome.tabs.getCurrent(function(tab) {
+					chrome.tabs.create({
+						url:node.data.url,
+						index: tab.index+1
+					});
+  	        	});
+			} else {
+            	// update graph visualization...
+            	ht.onClick(node.id, {
+            		onComplete: function() {
+            			ht.controller.onComplete();
+						navigationStack.push(node.name);
+						addTagChildren(node, availableTags);
+            		}
+				});
+			}
           });
       },
       //Change node styles when labels are placed
@@ -260,7 +369,7 @@ function init(){
               '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
               '       '+node.name+'' +
               '  </div>' +
-              '  <img src="'+ screenshotURL + '" width=100% />' +
+              '  <img src="'+ node.data.screenshot + '" width=100% />' +
               // '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
               // '    '+node.data.visited_date+'' +
               // '   </div>' +
@@ -325,6 +434,11 @@ function init(){
     ht.refresh(true);
     //end
     ht.controller.onComplete();
+	
+	while (callbackAfterInit.length > 0) {
+		var f = callbackAfterInit.shift();
+		f();
+	}
 }
 
 window.onload = init;
