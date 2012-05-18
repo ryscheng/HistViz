@@ -70,10 +70,6 @@ $jit.Graph.Node.prototype.depthScale = function() {
     return (4-this._depth)/4;
 }
 
-function receiveHistoryResultsForNode(node, items) {
-     
-}
-
 function receiveHistoryResults(items) {
     console.log("receiveHistoryResults() called")
     console.log(items);
@@ -443,6 +439,3 @@ function init(){
 
 window.onload = init;
 
-function rayPrint(msg) {
-  console.log("RAY SENDS:"+msg);
-}

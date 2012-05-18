@@ -1,6 +1,7 @@
 init();
 var histviztab;
 var current_screenshot;
+var webtags = new HARDWEBTAGS();
 
 function init() {
   console.log("HistViz init()");
@@ -9,29 +10,35 @@ function init() {
 
 function startHistViz(tab) {
   // extract keywords from the current page
-  chrome.tabs.query({active: true, windowId: chrome.windows.WINDOW_ID_CURRENT}, getKeywordsFromTab);
-  
-  chrome.tabs.captureVisibleTab(function(dataurl) {
-  	current_screenshot = dataurl;
-    chrome.tabs.sendRequest(histviztab.id, {receiver:'rootScreenshot', screenshot:dataurl });
+  histviztab = null;
+  current_screenshot = null;
+  chrome.tabs.query({active: true, windowId: chrome.windows.WINDOW_ID_CURRENT}, function(tabs) {
+    var tab = tabs[0];
+    var title = tab.title;
+    console.log("Current Window is URL="+tab.url+", Title="+title);
+    var domain = tab.url.split("/")[2];
+    chrome.tabs.captureVisibleTab(function(dataurl) {
+  	  current_screenshot = dataurl;
+      chrome.tabs.create({url:chrome.extension.getURL("graph_test.html"), index:tab.index+1}, function(tab) {
+        histviztab = tab;
+        var tags = webtags.lookup(domain);
+        console.log("Created viz @"+tab.url);
+        console.log(tags);
+        chrome.tabs.sendRequest(histviztab.id, {receiver:'rootScreenshot', screenshot:current_screenshot });
+        chrome.tabs.sendRequest(histviztab.id, {
+          receiver:'initialKeywords', 
+          root: true, 
+          domain: domain, 
+          title: title, 
+          url: tab.url, 
+          tags: tags, 
+          screenshot: current_screenshot});
+      });
+    });
   });
-  
-  // open HistViz as a tab next to the current one
-  chrome.tabs.create({url:chrome.extension.getURL("graph_test.html"), index:tab.index+1}, setHistVizTab);
 }
 
-function setHistVizTab(tab) {
-  histviztab = tab;
-  console.log("Created viz @"+tab.url);
-}
-
-function getKeywordsFromTab(tabs) {
-  var tab = tabs[0];
-  console.log("Current Window is URL="+tab.url+", Title="+tab.title);
-  var domains = tab.url.split("/");
-  searchDeliciousUrl(domains[2], tab.title, tab.url);
-}
-
+//DEPRECATED
 function searchDeliciousUrl(domain, title, url) {
   function parseDomForTags(dom) {
     var tagStr = "";
@@ -64,6 +71,3 @@ function searchDeliciousUrl(domain, title, url) {
   $.get(deliciousUrl, {}, parseDomForTags);
 }
 
-function print(stuff) {
-  console.log(stuff);
-}
