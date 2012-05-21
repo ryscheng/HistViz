@@ -314,6 +314,7 @@ function init(){
 			    		//ht.labels.clearLabels();
 			    		ht.root = node.id;
 			    		navigationStack.push(node.name);
+              runSearchFromNode(node, 8);
 			    		addTagChildren(node, availableTags);
 			    		ht.graph.computeLevels(node.id);
 			    		ht.graph.eachBFS(node.id, function(n) {

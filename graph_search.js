@@ -42,12 +42,15 @@ function initialKeywords(request, sender, sendResponse) {
 	}
 }
 
-function runSearchFromNode(node) {
+function runSearchFromNode(node, numResults) {
+	if (numResults === undefined) {
+		numResults = MAX_SEARCH_RESULTS;
+	}
 	var query = node.name;
 	for (var i=0; i<navigationStack.length; i++) { query += ' ' + navigationStack[i]; }
 	console.log("query: " + query);
 
-	chrome.history.search({text: query, startTime: 0, maxResults: MAX_SEARCH_RESULTS}, function(results) {
+	chrome.history.search({text: query, startTime: 0, maxResults: numResults}, function(results) {
 		var qr = [];
 		for (var i=0; i<results.length; i++) {
 			var r = results[i];
