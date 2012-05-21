@@ -29,6 +29,16 @@ Array.prototype.include = function(item) {
 	return false;
 };
 
+function isInNavigationStack(node) {
+  var p = node.id.split(".");
+  for (var i=1; i<p.length; i++) {
+    if (p[i] != navigationStack[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 
 (function() {
   var ua = navigator.userAgent,
@@ -70,44 +80,11 @@ $jit.Graph.Node.prototype.depthScale = function() {
     return (4-this._depth)/4;
 }
 
-function receiveHistoryResults(items) {
-    console.log("receiveHistoryResults() called")
-    console.log(items);
-    
-    if (items[0].id != 'root') console.log("Error: First item not root!");
-    
-    // var rootNode = {"id":items[0].id, "name":items[0].title, "data":{"url":items[0].url}};
-    var rootNode = ht.graph.getNode("root");
-    rootNode.name = items[0].title;
-    rootNode.data = {
-        url: items[0].url
-    }
-    
-    for (var i=1; i<items.length; i++) {
-        if (items[i].tag) { // if it's a tag
-            // do nothing for now
-        } else {
-            var d = new Date(items[i].lastVisitTime);
-            var n = {
-                "id": items[i].id,
-                "name": items[i].title,
-                "data": {
-                    "category": 'page',
-                    "url": items[i].url,
-                    "visited_date": d.format()
-                }
-            };        
-            ht.graph.addAdjacence(rootNode, n);
-        }
-    }
-    ht.graph.computeLevels('root');
-    ht.refresh(true);
-}
-
 function receiveRootScreenshot(screenshot) {
 	var root = ht.graph.getNode("root");
 	root.data.screenshot = screenshot;
 	root.data.alreadySet = false;
+    //ht.graph.computeLevels('root');
 	ht.refresh(true);
 }
 
@@ -115,7 +92,7 @@ function addTagChildren(parentNode, tags) {
 	for (var t in tags) {
 		if (tags[t] && !navigationStack.include(t)) {
 			var n = {
-				"id": parentNode.id + t,
+				"id": parentNode.id + '.' + t,
 				"name": t,
 				"data": {
 					"category": "tag"
@@ -140,7 +117,8 @@ function receiveRoot(root) {
 			screenshot: root.screenshot
 	    }
 		Log.write("loading");
-		ht.refresh(true);
+    	//ht.graph.computeLevels('root');
+		//ht.refresh(true);
 	
 		addTagChildren(rootNode, availableTags);
 	};
@@ -183,6 +161,7 @@ function receiveHistoryResultsForNode(parentNode, items) {
 			ht.graph.addAdjacence(parentNode, n);
 		}
 	}
+    //ht.graph.computeLevels('root');
 	ht.refresh(true);
 }
 
@@ -219,7 +198,7 @@ function init(){
     
     //init Hypertree
     ht = new $jit.Hypertree({
-      //id of the visualization container
+	  //id of the visualization container
       injectInto: 'infovis',
       //canvas width and height
       width: w,
@@ -280,30 +259,34 @@ function init(){
       //labels. This method is only triggered on label
       //creation
       onCreateLabel: function(domElement, node){
+          var style = domElement.style;
           var lblhtml; // = "<div style='font-size:1.0em'>" + node.name + "</div>";
           // console.log(node.data.category)
           if (node.data.category == "tag") {
               // console.log(node.getPos())
              lblhtml = node.name 
           } else if (node.data.category == "page") {
+              domElement.title = node.name + "\n" + node.data.url;
+              style.width=200*node.depthScale()+'px';
+              style.borderStyle="solid";
+              style.borderWidth="2px";
+              style.borderColor="#444";
+              
               lblhtml = ''+
-              '<div title='+node.data.url+' style="width:'+200*node.depthScale()+'px;' +
-              ' border-style:solid; border-width:2px; border-color:#444" >' +
               '  <img src="chrome://favicon/' + node.data.url + '" />' +
               '  <div style="font-size:'+1.0*node.depthScale()+'em; font-weight:bold">' +
               '       '+node.name+'' +
-              '   </div>' +
-              '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
-              '    '+node.data.visited_date+'' +
-              '   </div>' +
-              '</div>';
+              '  </div>' +
+              '  <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
+              '    '+node.data.visited_date+
+              '  </div>';
               // console.log(node.getData("dim"))
               // lblhtml += "<img src='img/thumb-google.png' width='" + node.getData("dim")*2 + "em' height='" + node.getData("dim")*2 + "em'></img>"
               // lblhtml += "<img src='img/thumb-google.png' class=node_thumbnail></img>"
               // lblhtml += "<img src='chrome://favicon/" + node.data.url + "'></img>"
               // lblhtml += "<div style='font-size:0.5em; font-weight:lighter'>" + node.data.visited_date + " - " + node.data.visited_time + "</div>"
           }
-            domElement.innerHTML =  lblhtml;
+          domElement.innerHTML =  lblhtml;
           // 
           // var pos = node.pos.getc(true), nconfig = this.node, data = node.data;
           // var width  = nconfig.width, height = nconfig.height;
@@ -318,88 +301,92 @@ function init(){
           
           
           $jit.util.addEvent(domElement, 'click', function () {
-			  console.log("do search with: " + node.name)
-              // var n = {};
-              // n.id = 'bholt';
-              // n.name = 'Brandon';
-              // n.data = {};
-              // n.data.category = 'page';
-              // n.data.visited_date = 'yesterday';
-              // n.data.visited_time = 'never';
-              // ht.graph.addAdjacence(node, n);
-              
-              // console.log(node.getSubnodes())
-              // ht.graph.addAdjacence(node, {'id':'bholt', 'name':'Brandon', 'data':{'category':'page'}});
-              // ht.graph.addAdjacence(node, {'id':'ryscheng', 'name':'Ray', 'data':{'category':'page'}});
-              // ht.graph.computeLevels("root");
-              // ht.refresh(true);
-              // receiveHistoryResults();
+			      console.log("do search with: " + node.name)
 
-			if (node.category == "page") {
-				chrome.tabs.getCurrent(function(tab) {
-					chrome.tabs.create({
-						url:node.data.url,
-						index: tab.index+1
-					});
-  	        	});
-			} else {
-            	// update graph visualization...
-            	ht.onClick(node.id, {
-            		onComplete: function() {
-            			ht.controller.onComplete();
-						navigationStack.push(node.name);
-						addTagChildren(node, availableTags);
-            		}
-				});
-			}
+			    	if (node.category == "page") {
+			    		chrome.tabs.getCurrent(function(tab) {
+			    			chrome.tabs.create({
+			    				url:node.data.url,
+			    				index: tab.index+1
+			    			});
+  	          });
+			    	} else {
+			    		//ht.labels.clearLabels();
+			    		ht.root = node.id;
+			    		navigationStack.push(node.name);
+			    		addTagChildren(node, availableTags);
+			    		ht.graph.computeLevels(node.id);
+			    		ht.graph.eachBFS(node.id, function(n) {
+                if (n._depth >= 2 && !navigationStack.include(n.name) && n.id != "root") {
+                  ht.labels.disposeLabel(n.id);
+                  ht.graph.removeNode(n.id);
+                }
+			    	  });
+              ht.refresh(true);
+			    		// move & zoom on node...
+              ht.onClick(node.id, {
+                onComplete: function() {
+                  ht.controller.onComplete();
+                }
+			    		});
+			    	}
           });
       },
       //Change node styles when labels are placed
       //or moved.
       onPlaceLabel: function(domElement, node){
-          if (node.id == "root" && node.data.alreadySet != true) {
-              node.data.alreadySet = true;
-              var lblhtml = ''+
-              '<div style="positioning:relative; top:-100px; width:'+200+'px; ' +
-              'border-style:solid; border-width:2px; border-color:#444" >' +
-              '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
-              '       '+node.name+'' +
-              '  </div>' +
-              '  <img src="'+ node.data.screenshot + '" width=100% />' +
-              // '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
-              // '    '+node.data.visited_date+'' +
-              // '   </div>' +
-              '</div>';
-              domElement.innerHTML = lblhtml;
-          }
-          
-          var style = domElement.style;
-          style.display = '';
-          style.cursor = 'pointer';
-          style.opacity = 1.0;
-		  style.backgroundColor = "#D2D2D2";
-          if (node._depth == 0) {
-			  style.size = 15;
-              // style.fontSize = "1.0em";
-              style.color = "#000000";
-			  style.backgroundColor = "#F2F2F2";
-          } else if (node._depth <= 1) {
-              // style.fontSize = "0.8em";
-              style.color = "#ddd";
-			  style.backgroundColor = "#777";
-          } else if(node._depth == 2){
-              // style.fontSize = "0.7em";
-              style.color = "#555";
-			  style.backgroundColor = "#222";
+        var style = domElement.style;
+        
+        if (node.id === "root") {
+			    if (node.data.alreadySet != true) {
+            node.data.alreadySet = true;
+            var lblhtml = ''+
+            '<div id="rootlbl" style="positioning:relative; top:-100px; width:100%; ' +
+            'border-style:solid; border-width:2px; border-color:#444" >' +
+            '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
+            '       '+node.name+'' +
+            '  </div>' +
+            '  <img src="'+ node.data.screenshot + '" width=100% />' +
+            // '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
+            // '    '+node.data.visited_date+'' +
+            // '   </div>' +
+            '</div>';
+            domElement.innerHTML = lblhtml;
           } else {
-			  // style.fontSize = "0.4em";
-			  // style.color = "#333";
-              style.display = 'none';
           }
+          style.width=Math.max(200*(4-node._depth)/4,20)+'px';
+		    }
+          
+        style.display = '';
+        style.cursor = 'pointer';
+        style.opacity = 1.0;
+		    //style.backgroundColor = "#D2D2D2";
+        
+        if (node._depth == 0) {
+			    //console.log("place label for new root: " + node.id);
+			    style.size = 15;
+          style.fontSize = "1.0em";
+          style.color = "#000000";
+			    style.backgroundColor = "#F2F2F2";
+        } else if (node._depth <= 1) {
+          style.fontSize = "0.8em";
+          style.color = "#ddd";
+			    style.backgroundColor = "#777";
+        } else if(node._depth == 2){
+          style.fontSize = "0.7em";
+          style.color = "#555";
+			    style.backgroundColor = "#222";
+        } else {
+			    style.fontSize = "0em";
+          style.borderStyle = "none";
+          style.backgroundColor = '';
+			    // style.color = "#333";
+          //style.display = 'none';
+        }
 
-          var left = parseInt(style.left);
-          var w = domElement.offsetWidth;
-          style.left = (left - w / 2) + 'px';
+        var left = parseInt(style.left);
+        var w = domElement.offsetWidth;
+        style.left = (left - w / 2) + 'px';
       },
       
       onComplete: function(){
