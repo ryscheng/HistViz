@@ -27,7 +27,7 @@ function tokenizeTitle(title) {
 }
 
 function initialKeywords(request, sender, sendResponse) {
-	console.log("Got new keywords: " + request);
+	console.log("Got new keywords");
 	if (request.root) {
 		var root = { id: 'root', title: request.title, url: request.url, screenshot: request.screenshot };
     var titletags = tokenizeTitle(request.title);

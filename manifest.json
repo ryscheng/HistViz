@@ -10,10 +10,11 @@
 	"background": {
     "scripts": ["js/jquery.min.js", "hardcoded_tags.js", "background.js"]
   },
-	//"content_scripts": [{
-	//	"matches": ["*graph_test.html"],
-	//  "js": ["contentscript.js"]
-  //}],
+	"content_scripts": 
+  [{
+		"matches": ["http://www.yelp.com/*"],
+	  "js": ["js/jquery.min.js", "contentscripts/metakeywords.js"]
+  }],
 	"permissions": [
     "<all_urls>",
 		"tabs",
