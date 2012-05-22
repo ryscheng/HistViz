@@ -303,7 +303,7 @@ function init(){
           $jit.util.addEvent(domElement, 'click', function () {
 			      console.log("do search with: " + node.name)
 
-			    	if (node.category == "page") {
+			    	if (node.data.category == "page") {
 			    		chrome.tabs.getCurrent(function(tab) {
 			    			chrome.tabs.create({
 			    				url:node.data.url,
