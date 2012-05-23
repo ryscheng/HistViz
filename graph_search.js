@@ -2,7 +2,7 @@ chrome.extension.onRequest.addListener(handleRequests);
 
 MAX_SEARCH_RESULTS=4;
 NUM_TAGS=7;
-var availableTags = {};
+var availableTags;
 var navigationStack = [];
 
 function handleRequests(request, sender, sendResponse) {
@@ -34,6 +34,7 @@ function initialKeywords(request, sender, sendResponse) {
 		var tags = request.tags.concat(titletags);
     console.log(request);
     console.log(tags);
+	availableTags = {};
 		for (var i=0; i<tags.length; i++) {
 			// choose the first tags that come (ranking them might be preferable)
 			availableTags[tags[i].toLowerCase()] = (i<NUM_TAGS)?true:false;
@@ -42,7 +43,8 @@ function initialKeywords(request, sender, sendResponse) {
 	}
 }
 
-function runSearchFromNode(node, numResults) {
+function runSearchFromNode(node, cont, numResults) {
+	console.log("runSearchFromNode");
 	if (numResults === undefined) {
 		numResults = MAX_SEARCH_RESULTS;
 	}
@@ -57,7 +59,7 @@ function runSearchFromNode(node, numResults) {
 			r.type = "page";
 			qr.push(r);
 		}
-		receiveHistoryResultsForNode(node, qr);
+		receiveHistoryResultsForNode(node, qr, cont);
 	});
 }
 

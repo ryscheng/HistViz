@@ -3,8 +3,12 @@ var labelType, useGradients, nativeTextSupport, animate;
 var ht;
 var backNode;
 var screenshotURL;
+var subtree;
+var numTagsOutstanding;
+
 
 var callbackAfterInit = [];
+var callbackAfterReceiveRoot = [];
 
 Date.prototype.format = function() {
     var m_names = new Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec");
@@ -77,31 +81,48 @@ var Log = {
 };
 
 $jit.Graph.Node.prototype.depthScale = function() {
-    return (4-this._depth)/4;
+    return 1; //return (4-this._depth)/4;
 }
 
 function receiveRootScreenshot(screenshot) {
-	var root = ht.graph.getNode("root");
-	root.data.screenshot = screenshot;
-	root.data.alreadySet = false;
-    //ht.graph.computeLevels('root');
-	ht.refresh(true);
+//	var root = ht.graph.getNode("root");
+//	root.data.screenshot = screenshot;
+//	root.data.alreadySet = false;
+//    //ht.graph.computeLevels('root');
+//	ht.refresh(true);
 }
 
-function addTagChildren(parentNode, tags) {
-	for (var t in tags) {
-		if (tags[t] && !navigationStack.include(t)) {
-			var n = {
-				"id": parentNode.id + '.' + t,
-				"name": t,
-				"data": {
-					"category": "tag"
-				}
-			};
-			ht.graph.addAdjacence(parentNode, n);
-			runSearchFromNode(n);
-		}
-	}
+function addTagChildren(parentNodeId, tags, cont) {
+  console.log("addTagChildren(" + parentNodeId + ")");
+  console.log(tags);
+  console.log(navigationStack);
+  
+  subtree = {
+      id: parentNodeId,
+      children: []
+  };
+  console.log(tags);
+ 
+  numTagsOutstanding = 0;
+  for (var t in tags) {
+    console.log(t);
+  	if (tags[t] && !navigationStack.include(t)) {
+  		var n = {
+  			id: parentNodeId + '.' + t,
+  			name: t,
+  			data: {
+  				category: "tag"
+  			},
+        children: []
+  		};
+      console.log(n); 
+  		//ht.graph.addAdjacence(parentNode, n);
+      subtree.children.push(n);
+  
+      numTagsOutstanding++;
+  		runSearchFromNode(n, cont);
+  	}
+  }
 }
 
 function receiveRoot(root) {
@@ -109,28 +130,41 @@ function receiveRoot(root) {
 	console.log("received root: " + root + ", availableTags:");
 	console.log(availableTags);
 
-	var w = function() {
-	    var rootNode = ht.graph.getNode("root");
-	    rootNode.name = root.title;
-	    rootNode.data = {
-	        url: root.url,
-			screenshot: root.screenshot
-	    }
-		Log.write("loading");
-    	//ht.graph.computeLevels('root');
-		//ht.refresh(true);
-	
-		addTagChildren(rootNode, availableTags);
-	};
+//	var w = function() {
+//	    var rootNode =  {id: 'root'};
+//	    rootNode.name = root.title;
+//	    rootNode.data = {
+//	        url: root.url
+//			//screenshot: root.screenshot
+//	    }
+//		Log.write("loading");
+//    	//ht.graph.computeLevels('root');
+//		//ht.refresh(true);
+//	  
+//    console.log("receiveRoot: sending tags");
+//
+//		addTagChildren('root', availableTags, function(ans) {
+//      st.addSubtree(ans);
+//      st.refresh();
+//    });
+//	};
+//
+  var w = function() {
+    console.log("receiveRoot");
+    while (callbackAfterReceiveRoot.length > 0) {
+        var f = callbackAfterReceiveRoot.shift();
+        f();
+    }
+  };
 
-	if (ht) {
+  if (st) {
 		w();
 	} else {
 		callbackAfterInit.push(w);
 	}
 }
 
-function receiveHistoryResultsForNode(parentNode, items) {
+function receiveHistoryResultsForNode(parentNode, items, cont) {
 	console.log("results " + parentNode.name + "(" + items.length + ")");
 	if (items.length == 0) {
 		//remove node if no matches
@@ -149,20 +183,27 @@ function receiveHistoryResultsForNode(parentNode, items) {
 			//} else {
 				var d = new Date(items[i].lastVisitTime);
 				n = {
-					'id': parentNode.id + '.' + items[i].id,
-					'name': items[i].title,
-					'data': {
-						'category': 'page',
-						'url': items[i].url,
-						'visited_date': d.format()
-					}
+					id: parentNode.id + '.' + items[i].id,
+					name: items[i].title,
+					data: {
+						category: 'page',
+						url: items[i].url,
+						visited_date: d.format()
+					},
+          children: []
 				};
 			//}
-			ht.graph.addAdjacence(parentNode, n);
+			//ht.graph.addAdjacence(parentNode, n);
+      parentNode.children.push(n);
 		}
 	}
     //ht.graph.computeLevels('root');
-	ht.refresh(true);
+	//ht.refresh(true);
+  numTagsOutstanding--;
+  console.log("outstanding = " + numTagsOutstanding);
+  if (numTagsOutstanding == 0) {
+    cont(subtree);
+  }
 }
 
 function init(){
@@ -425,5 +466,5 @@ function init(){
 	}
 }
 
-window.onload = init;
+//window.onload = init;
 
