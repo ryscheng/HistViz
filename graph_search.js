@@ -48,7 +48,7 @@ function initialKeywords(request, sender, sendResponse) {
 	    availableTags[tags[i].toLowerCase()] = (i<NUM_TAGS)?true:false;
 	}
 	receiveRoot(root); //notify graph_test that it can start loading tags
-	}
+    }
 }
 
 function runSearchFromNode(node, numResults) {
