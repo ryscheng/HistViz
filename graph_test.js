@@ -3,7 +3,6 @@ var labelType, useGradients, nativeTextSupport, animate;
 var ht;
 var backNode;
 var screenshotURL;
-
 var callbackAfterInit = [];
 
 Date.prototype.format = function() {
@@ -21,22 +20,22 @@ String.prototype.supplant = function (o) {
 };
 
 Array.prototype.include = function(item) {
-	for (var i=0; i<this.length; i++) {
-		if (this[i] == item) {
-			return true;
-		}
+    for (var i=0; i<this.length; i++) {
+	if (this[i] == item) {
+	    return true;
 	}
-	return false;
+    }
+    return false;
 };
 
 function isInNavigationStack(node) {
-  var p = node.id.split(".");
-  for (var i=1; i<p.length; i++) {
-    if (p[i] != navigationStack[i]) {
-      return false;
+    var p = node.id.split(".");
+    for (var i=1; i<p.length; i++) {
+	if (p[i] != navigationStack[i]) {
+	    return false;
+	}
     }
-  }
-  return true;
+    return true;
 }
 
 
@@ -80,6 +79,65 @@ $jit.Graph.Node.prototype.depthScale = function() {
     return (4-this._depth)/4;
 }
 
+
+function clearSidebar() {
+    var table = document.getElementById('filtertable');
+    while (table.hasChildNodes() ){
+	table.removeChild(table.firstChild);
+    }
+}
+
+function tagBoxClicked(tag){
+    availableTags[tag] = ! availableTags[tag];
+    console.log("availableTags for " + tag + ": " + availableTags[tag]);
+    if( availableTags[tag]){
+	console.log("start using tag: " + tag);
+	var rootNode = ht.root;
+	//	addTagChildren(rootNode, availableTags);
+	//	ht.graph.computeLevels(rootNode.id);
+	rootNode = ht.graph.getNode("root");
+	addTagChildren(rootNode, availableTags);
+
+	ht.refresh(true);
+    }
+    else{
+	console.log("stop using tag: " + tag);
+	var n = ht.graph.getByName(tag);
+	ht.graph.removeNode(n.id);
+	ht.labels.disposeLabel(n.id);
+
+	n.eachSubgraph(function(node){
+		    ht.graph.removeNode(node.id);
+		    // ht.labels.hideLabel(n.id, false);
+		    ht.labels.disposeLabel(node.id);
+	    });
+        ht.refresh(true);
+    }
+}
+
+
+
+function addTagToSidebar(tag, ifchecked){
+    var chk = document.createElement("INPUT");
+    chk.setAttribute("type","checkbox");
+    chk.setAttribute("name",tag+'_box_');
+    chk.onclick = Function("tagBoxClicked('"+tag+"');");
+    chk.checked = ifchecked;
+
+    var table = document.getElementById('filtertable');
+    var newRow = document.createElement("tr");
+    var newCol = document.createElement("td");
+    var newTxt = document.createTextNode(tag);
+    
+
+    newCol.appendChild(newTxt);
+    newCol.appendChild(chk);
+    newRow.appendChild(newCol);
+    table.appendChild(newRow);
+}
+
+
+
 function receiveRootScreenshot(screenshot) {
 	var root = ht.graph.getNode("root");
 	root.data.screenshot = screenshot;
@@ -89,49 +147,54 @@ function receiveRootScreenshot(screenshot) {
 }
 
 function addTagChildren(parentNode, tags) {
-	for (var t in tags) {
-		if (tags[t] && !navigationStack.include(t)) {
-			var n = {
-				"id": parentNode.id + '.' + t,
-				"name": t,
-				"data": {
-					"category": "tag"
-				}
-			};
-			ht.graph.addAdjacence(parentNode, n);
-			runSearchFromNode(n);
+    clearSidebar();
+    for (var t in tags) {
+	if (tags[t] && !navigationStack.include(t)) {
+	    var n = {
+		"id": parentNode.id + '.' + t,
+		"name": t,
+		"data": {
+		    "category": "tag"
 		}
+	    };
+	    ht.graph.addAdjacence(parentNode, n);
+	    
+	    ht.labels.hideLabel(n.id, true);
+	    console.log("add " + parentNode.name + " to " + n.name);
+	    runSearchFromNode(n);
 	}
+	addTagToSidebar(t,tags[t]);
+    }
 }
 
 function receiveRoot(root) {
-	// at this point, tags are also loaded into 'graph_search.js::availableTags'
-	console.log("received root: " + root + ", availableTags:");
-	console.log(availableTags);
-
-	var w = function() {
-	    var rootNode = ht.graph.getNode("root");
-	    rootNode.name = root.title;
-	    rootNode.data = {
-	        url: root.url,
+    // at this point, tags are also loaded into 'graph_search.js::availableTags'
+    console.log("received root: " + root + ", availableTags:");
+    console.log(availableTags);
+    var w = function() {
+	var rootNode = ht.graph.getNode("root");
+	rootNode.name = root.title;
+	navigationStack.push(rootNode.name);
+	rootNode.data = {
+	    url: root.url,
 			screenshot: root.screenshot
-	    }
+	}
 		Log.write("loading");
     	//ht.graph.computeLevels('root');
-		//ht.refresh(true);
+	//ht.refresh(true);
 	
-		addTagChildren(rootNode, availableTags);
-	};
-
-	if (ht) {
-		w();
-	} else {
-		callbackAfterInit.push(w);
-	}
+	addTagChildren(rootNode, availableTags);
+    };
+    
+    if (ht) {
+	w();
+    } else {
+	callbackAfterInit.push(w);
+    }
 }
 
 function receiveHistoryResultsForNode(parentNode, items) {
-	console.log("results " + parentNode.name + "(" + items.length + ")");
+	console.log("results: " + parentNode.name + " (" + items.length + " items)");
 	if (items.length == 0) {
 		//remove node if no matches
 		console.log("remove node " + parentNode.name);
@@ -218,8 +281,9 @@ function init(){
           transform: true
       },
       Edge: {
-          lineWidth: 2,
-          color: "#068"
+		overridable: true,
+		lineWidth: 2,
+		color: "#068"
       },
 	  NodeStyles: {
 		  enable: false,
@@ -313,16 +377,37 @@ function init(){
 			    	} else {
 			    		//ht.labels.clearLabels();
 			    		ht.root = node.id;
-			    		navigationStack.push(node.name);
-              runSearchFromNode(node, 8);
+					if(navigationStack.include(node.name)){
+					    for(var i = navigationStack.length-1; i >= 0; i--){
+						if(navigationStack[i] == node.name){
+						    break;
+						}
+						else{
+						    navigationStack.pop(node.name);
+						}
+					    }
+					}
+					else
+					    navigationStack.push(node.name);
+					runSearchFromNode(node, 8);
 			    		addTagChildren(node, availableTags);
 			    		ht.graph.computeLevels(node.id);
 			    		ht.graph.eachBFS(node.id, function(n) {
                 if (n._depth >= 2 && !navigationStack.include(n.name) && n.id != "root") {
-                  ht.labels.disposeLabel(n.id);
-                  ht.graph.removeNode(n.id);
+		    //		    ht.labels.disposeLabel(n.id);
+		    ht.labels.hideLabel(n, false);
+		    ht.graph.removeNode(n.id);
                 }
-			    	  });
+		n.eachAdjacency(function(adj) {
+			if(navigationStack.include(adj.nodeTo.name ) &&
+			   navigationStack.include(n.name)){
+			    adj.setDataset('current', {lineWidth: 4, color: '#f00'});
+			}
+			else{
+			    adj.setDataset('current', {lineWidth: 2, color: '#068'});
+			}
+		    });
+					    });
               ht.refresh(true);
 			    		// move & zoom on node...
               ht.onClick(node.id, {
@@ -419,10 +504,10 @@ function init(){
     //end
     ht.controller.onComplete();
 	
-	while (callbackAfterInit.length > 0) {
-		var f = callbackAfterInit.shift();
-		f();
-	}
+    while (callbackAfterInit.length > 0) {
+	var f = callbackAfterInit.shift();
+	f();
+    }
 }
 
 window.onload = init;
