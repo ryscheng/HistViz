@@ -34,6 +34,30 @@ Array.prototype.include = function(item) {
 	return false;
 };
 
+if (!Array.prototype.filter)
+{
+  Array.prototype.filter = function(fun /*, thisp*/)
+  {
+    var len = this.length;
+    if (typeof fun != "function")
+      throw new TypeError();
+
+    var res = new Array();
+    var thisp = arguments[1];
+    for (var i = 0; i < len; i++)
+    {
+      if (i in this)
+      {
+        var val = this[i]; // in case fun mutates this
+        if (fun.call(thisp, val, i, this))
+          res.push(val);
+      }
+    }
+
+    return res;
+  };
+}
+
 function isInNavigationStack(node) {
   var p = node.id.split(".");
   for (var i=1; i<p.length; i++) {
@@ -85,11 +109,6 @@ $jit.Graph.Node.prototype.depthScale = function() {
     return 1; //return (4-this._depth)/4;
 }
 
-function getRootOffset() {
-  var infovis = document.getElementById('infovis');
-  return { Move: { offsetX: infovis.offsetWidth/2-100, offsetY: 0 } };
-}
-
 function receiveRootScreenshot(screenshot) {
   console.log('received screenshot');
 	rootScreenshot = screenshot;
@@ -98,66 +117,114 @@ function receiveRootScreenshot(screenshot) {
   st.labels.clearLabels();
 	//st.refresh(true);
   var infovis = document.getElementById('infovis');
-  st.onClick(st.root, getRootOffset());
+  st.onClick(st.root); //, getRootOffset());
 }
 
-function addTagChildren(parentNodeId, tags, cont) {
-  console.log("addTagChildren(" + parentNodeId + ")");
-  console.log(tags);
-  console.log(navigationStack);
-  
-  subtree = {
-      id: parentNodeId,
-      children: []
+function createTagSubtree(parentNodeId, tags) {
+  var tree = {
+    id: parentNodeId,
+    children: []
   };
-  console.log(tags);
- 
-  numTagsOutstanding = 0;
+  addTagsToTree(tree, tags);
+  return tree;
+}
+function addTagsToTree(tree, tags) {
   for (var t in tags) {
-    console.log(t);
-  	if (tags[t] && !navigationStack.include(t)) {
+    if (tags[t] && !navigationStack.include(t)) {
   		var n = {
-  			id: parentNodeId + '.' + t,
+  			id: tree.id + '.' + t,
   			name: t,
   			data: {
   				category: "tag"
   			},
         children: []
   		};
-      console.log(n); 
-  		//ht.graph.addAdjacence(parentNode, n);
-      subtree.children.push(n);
-  
-      numTagsOutstanding++;
-  		runSearchFromNode(n, cont);
-  	}
+      tree.children.push(n);
+    }
   }
 }
+
+function generateChildren(nodeId, tags, cont) {
+  var wholeTree = st.toJSON();
+
+  var parentNode = $jit.json.getParent(wholeTree, nodeId);
+//  parentNode.children = parentNode.children.filter(function(n) {
+//    return n.data.category == "tag";
+//  });
+//  st.op.morph(wholeTree, { type:'fade', duration:100 }, {  
+//    'node-property': ['height'],  
+//  });
+  var animating = false;
+
+  var doSearch = function() {
+    if (animating) {
+      setTimeout(doSearch, 100);
+    } else {
+      var tree = $jit.json.getSubtree(st.toJSON(),nodeId);
+      addTagsToTree(tree, tags);
+      runSearchFromNode(tree, cont, 8);
+    }
+  };
+  var doingSearchWithCallback = false;
+
+  var cs = parentNode.children;
+  for (var i=0; i<cs.length; i++) {
+    if (cs[i].data.category == "page") {
+      doingSearchWithCallback = true;
+      animating = true;
+
+      st.removeSubtree(cs[i].id, true, 'animate', {
+        onComplete: function() {
+          animating = false;
+        }
+      });
+    }
+  }
+  
+  setTimeout(doSearch, 100);
+  //if (!doingSearchWithCallback) doSearch();
+
+  //var tree = createTagSubtree(nodeId, tags);
+}
+
+//function addTagChildren(parentNodeId, tags, cont) {
+//  console.log("addTagChildren(" + parentNodeId + ")");
+//  console.log(tags);
+//  console.log(navigationStack);
+//  
+//  subtree = {
+//      id: parentNodeId,
+//      children: []
+//  };
+//  console.log(tags);
+// 
+//  numTagsOutstanding = 0;
+//  for (var t in tags) {
+//    console.log(t);
+//  	if (tags[t] && !navigationStack.include(t)) {
+//  		var n = {
+//  			id: parentNodeId + '.' + t,
+//  			name: t,
+//  			data: {
+//  				category: "tag"
+//  			},
+//        children: []
+//  		};
+//      console.log(n); 
+//  		//ht.graph.addAdjacence(parentNode, n);
+//      subtree.children.push(n);
+//  
+//      numTagsOutstanding++;
+//  		runSearchFromNode(n, cont);
+//  	}
+//  }
+//}
 
 function receiveRoot(root) {
 	// at this point, tags are also loaded into 'graph_search.js::availableTags'
 	console.log("received root: " + root + ", availableTags:");
 	console.log(availableTags);
 
-//	var w = function() {
-//	    var rootNode =  {id: 'root'};
-//	    rootNode.name = root.title;
-//	    rootNode.data = {
-//	        url: root.url
-//			//screenshot: root.screenshot
-//	    }
-//		Log.write("loading");
-//    	//ht.graph.computeLevels('root');
-//		//ht.refresh(true);
-//	  
-//    console.log("receiveRoot: sending tags");
-//
-//		addTagChildren('root', availableTags, function(ans) {
-//      st.addSubtree(ans);
-//      st.refresh();
-//    });
-//	};
-//
   var w = function(infovis) {
     console.log("receiveRoot");
     rootName = root.title
@@ -166,7 +233,7 @@ function receiveRoot(root) {
         f();
     }
     st.labels.clearLabels();
-    st.onClick(st.root, getRootOffset());
+    st.onClick(st.root); //, getRootOffset());
   };
 
   if (st) {
@@ -174,7 +241,6 @@ function receiveRoot(root) {
 	} else {
 		callbackAfterInit.push(w);
 	}
-
 }
 
 function receiveHistoryResultsForNode(parentNode, items, cont) {
@@ -190,33 +256,21 @@ function receiveHistoryResultsForNode(parentNode, items, cont) {
 			// do nothing for now
 		} else {
 			var id = items[i].id;
-			var n;
-			//if (ht.graph.hasNode(id)) {
-			//	n = ht.graph.getNode(id);
-			//} else {
-				var d = new Date(items[i].lastVisitTime);
-				n = {
-					id: parentNode.id + '.' + items[i].id,
-					name: items[i].title,
-					data: {
-						category: 'page',
-						url: items[i].url,
-						visited_date: d.format()
-					},
-          children: []
-				};
-			//}
-			//ht.graph.addAdjacence(parentNode, n);
+			var d = new Date(items[i].lastVisitTime);
+			var n = {
+				id: parentNode.id + '.' + items[i].id,
+				name: items[i].title,
+				data: {
+					category: 'page',
+					url: items[i].url,
+					visited_date: d.format()
+				},
+        children: []
+			};
       parentNode.children.push(n);
 		}
 	}
-    //ht.graph.computeLevels('root');
-	//ht.refresh(true);
-  numTagsOutstanding--;
-  console.log("outstanding = " + numTagsOutstanding);
-  if (numTagsOutstanding == 0) {
-    cont(subtree);
-  }
+  cont(parentNode);
 }
 
 function init(){

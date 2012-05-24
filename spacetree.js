@@ -72,18 +72,17 @@ function init(){
         //set duration for the animation
         duration: 800,
         
+        //offsetX: infovis.offsetWidth/2 - 100,
+        //offsetY: 0,
+
         //set animation transition type
         transition: $jit.Trans.Quart.easeInOut,
         //set distance between node and its children
-        levelDistance: 50,
+        levelDistance: 100,
         //set max levels to show. Useful when used with
         //the request method for requesting trees of specific depth
         levelsToShow: 2,
         
-        Margin: {
-            left: -500
-        },
-
         //set node and edge styles
         //set overridable=true for styling individual
         //nodes or edges
@@ -120,11 +119,18 @@ function init(){
 
             console.log("request: " + nodeId);
             var f = function() {
-                addTagChildren(nodeId, availableTags, function(ans) {
-                    console.log("cont");
-                    console.log(ans);
+                if (nodeId == "root") {
+                  onComplete.onComplete(nodeId, createTagSubtree(nodeId, availableTags));
+                } else {
+                  //addTagChildren(nodeId, availableTags, function(ans) {
+                  //  console.log("cont");
+                  //  console.log(ans);
+                  //  onComplete.onComplete(nodeId, ans);
+                  //});
+                  generateChildren(nodeId, availableTags, function(ans) {
                     onComplete.onComplete(nodeId, ans);
-                });
+                  });
+                }
             };
 
             if (availableTags === undefined) {
@@ -165,7 +171,7 @@ function init(){
                     '</div>';
                     label.innerHTML = lblhtml;
                 }
-                style.width=Math.max(200*(4-node._depth)/4,20)+'px';
+                style.width=Math.max(100*(4-node._depth)/4,20)+'px';
              
             } else if (node.data.category == "tag") {
                 // console.log(node.getPos())
