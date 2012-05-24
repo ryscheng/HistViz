@@ -121,6 +121,8 @@ function addTagToSidebar(tag, ifchecked){
     var chk = document.createElement("INPUT");
     chk.setAttribute("type","checkbox");
     chk.setAttribute("name",tag+'_box_');
+
+    console.log("tag: "); + tag
     chk.onclick = Function("tagBoxClicked('"+tag+"');");
     chk.checked = ifchecked;
 
@@ -139,11 +141,18 @@ function addTagToSidebar(tag, ifchecked){
 
 
 function receiveRootScreenshot(screenshot) {
-	var root = ht.graph.getNode("root");
-	root.data.screenshot = screenshot;
-	root.data.alreadySet = false;
+  var f = function() {
+	  var root = ht.graph.getNode("root");
+	  root.data.screenshot = screenshot;
+	  root.data.alreadySet = false;
     //ht.graph.computeLevels('root');
-	ht.refresh(true);
+	  ht.refresh(true);
+  }
+  if (ht === undefined) {
+    callbackAfterInit.push(f);
+  } else {
+    f();
+  }
 }
 
 function addTagChildren(parentNode, tags) {
@@ -174,7 +183,7 @@ function receiveRoot(root) {
     var w = function() {
 	var rootNode = ht.graph.getNode("root");
 	rootNode.name = root.title;
-	navigationStack.push(rootNode.name);
+	//navigationStack.push(rootNode.name);
 	rootNode.data = {
 	    url: root.url,
 			screenshot: root.screenshot
@@ -399,8 +408,8 @@ function init(){
 		    ht.graph.removeNode(n.id);
                 }
 		n.eachAdjacency(function(adj) {
-			if(navigationStack.include(adj.nodeTo.name ) &&
-			   navigationStack.include(n.name)){
+			if((navigationStack.include(adj.nodeTo.name ) &&
+			   navigationStack.include(n.name)) || (n.id == "root") ){
 			    adj.setDataset('current', {lineWidth: 4, color: '#f00'});
 			}
 			else{

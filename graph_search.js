@@ -63,8 +63,10 @@ function runSearchFromNode(node, numResults) {
 		var qr = [];
 		for (var i=0; i<results.length; i++) {
 			var r = results[i];
-			r.type = "page";
-			qr.push(r);
+      if (r.url.indexOf("chrome-extension") == -1) {
+			  r.type = "page";
+			  qr.push(r);
+      }
 		}
 		receiveHistoryResultsForNode(node, qr);
 	});
