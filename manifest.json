@@ -12,7 +12,7 @@
   },
 	"content_scripts": 
   [{
-		"matches": ["http://www.yelp.com/*"],
+		"matches": ["http://www.yelp.com/*", "http://www.amazon.com/*"],
 	  "js": ["js/jquery.min.js", "contentscripts/metakeywords.js"]
   }],
 	"permissions": [
