@@ -5,7 +5,8 @@ var backNode;
 var screenshotURL;
 var subtree;
 var numTagsOutstanding;
-
+var rootScreenshot;
+var rootName;
 
 var callbackAfterInit = [];
 var callbackAfterReceiveRoot = [];
@@ -84,12 +85,20 @@ $jit.Graph.Node.prototype.depthScale = function() {
     return 1; //return (4-this._depth)/4;
 }
 
+function getRootOffset() {
+  var infovis = document.getElementById('infovis');
+  return { Move: { offsetX: infovis.offsetWidth/2-100, offsetY: 0 } };
+}
+
 function receiveRootScreenshot(screenshot) {
-//	var root = ht.graph.getNode("root");
-//	root.data.screenshot = screenshot;
-//	root.data.alreadySet = false;
-//    //ht.graph.computeLevels('root');
-//	ht.refresh(true);
+  console.log('received screenshot');
+	rootScreenshot = screenshot;
+	tree.data.alreadySet = false;
+    //ht.graph.computeLevels('root');
+  st.labels.clearLabels();
+	//st.refresh(true);
+  var infovis = document.getElementById('infovis');
+  st.onClick(st.root, getRootOffset());
 }
 
 function addTagChildren(parentNodeId, tags, cont) {
@@ -149,19 +158,23 @@ function receiveRoot(root) {
 //    });
 //	};
 //
-  var w = function() {
+  var w = function(infovis) {
     console.log("receiveRoot");
+    rootName = root.title
     while (callbackAfterReceiveRoot.length > 0) {
         var f = callbackAfterReceiveRoot.shift();
         f();
     }
+    st.labels.clearLabels();
+    st.onClick(st.root, getRootOffset());
   };
 
   if (st) {
-		w();
+		w(document.getElementById('infovis'));
 	} else {
 		callbackAfterInit.push(w);
 	}
+
 }
 
 function receiveHistoryResultsForNode(parentNode, items, cont) {

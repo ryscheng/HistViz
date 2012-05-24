@@ -26,10 +26,11 @@ var Log = {
 };
 
 var st;
+var tree;
 
 function init(){
     // init data
-    var json = {
+    tree = {
         "id": "root",
         "name": "",
         "data": {
@@ -60,12 +61,17 @@ function init(){
         }
     });
 
+    var infovis = document.getElementById('infovis');
+
     //init Spacetree
     //Create a new ST instance
     st = new $jit.ST({
-        'injectInto': 'infovis',
+        injectInto: 'infovis',
+        orientation: 'left',
+        align: 'center',
         //set duration for the animation
         duration: 800,
+        
         //set animation transition type
         transition: $jit.Trans.Quart.easeInOut,
         //set distance between node and its children
@@ -73,6 +79,11 @@ function init(){
         //set max levels to show. Useful when used with
         //the request method for requesting trees of specific depth
         levelsToShow: 2,
+        
+        Margin: {
+            left: -500
+        },
+
         //set node and edge styles
         //set overridable=true for styling individual
         //nodes or edges
@@ -138,7 +149,25 @@ function init(){
             var style = label.style;
             var lblhtml; // = "<div style='font-size:1.0em'>" + node.name + "</div>";
             // console.log(node.data.category)
-            if (node.data.category == "tag") {
+            if (node.id == "root") {
+                if (node.data.alreadySet != true) {
+                    node.data.alreadySet = true;
+                    var lblhtml = ''+
+                    '<div id="rootlbl" style="positioning:relative; top:-100px; width:100%; ' +
+                    'border-style:solid; border-width:2px; border-color:#444" >' +
+                    '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
+                    '       '+rootName+'' +
+                    '  </div>' +
+                    '  <img src="'+ rootScreenshot + '" width=100% />' +
+                    // '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
+                    // '    '+node.data.visited_date+'' +
+                    // '   </div>' +
+                    '</div>';
+                    label.innerHTML = lblhtml;
+                }
+                style.width=Math.max(200*(4-node._depth)/4,20)+'px';
+             
+            } else if (node.data.category == "tag") {
                 // console.log(node.getPos())
                lblhtml = node.name 
             } else if (node.data.category == "page") {
@@ -170,24 +199,23 @@ function init(){
             //label.innerHTML = node.name;
             label.onclick = function(){
                 if (node.data.category == "page") {
-			        chrome.tabs.getCurrent(function(tab) {
-			            chrome.tabs.create({
-			    	        url:node.data.url,
-			    	        index: tab.index+1
-			            });
+			              chrome.tabs.getCurrent(function(tab) {
+			                  chrome.tabs.create({
+			    	                url:node.data.url,
+			    	                index: tab.index+1
+			                  });
   	                });
-			    } else {
+			          } else {
                     navigationStack.push(node.name);
                     st.onClick(node.id);
                 }
             };
             //set label styles
-            var style = label.style;
             //style.width = 40 + 'px';
             //style.height = 17 + 'px';            
             style.cursor = 'pointer';
             style.color = '#fff';
-            //style.backgroundColor = '#1a1a1a';
+            style.backgroundColor = '#303030';
             //style.fontSize = '0.8em';
             style.textAlign= 'left';
             //style.textDecoration = 'underline';
@@ -227,17 +255,18 @@ function init(){
         }
     });
     //load json data
-    st.loadJSON(json);
+    st.loadJSON(tree);
     //compute node positions and layout
     st.compute();
     //emulate a click on the root node.
-    st.onClick(st.root);
     //end
 
     while (callbackAfterInit.length > 0) {
       var f = callbackAfterInit.shift();
-      f();
+      f(infovis);
     }
+    
+
 }
 
 window.onload = init;
