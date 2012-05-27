@@ -132,7 +132,8 @@ function init(){
         },
         Edge: {
             lineWidth: 2,
-            color: "#068"
+            color: "#068",
+            overridable: true
         },
         NodeStyles: {
             enable: false,
@@ -158,6 +159,13 @@ function init(){
                 node.setData("height", 50*node.depthScale());
             } else if (node.data.category == "page") {
                 node.setData("color","#fdb");
+            }
+        },
+        onBeforePlotLine: function(adj) {
+            if (isInNavigationStack(adj.nodeTo) && (adj.nodeFrom.id == 'root' || isInNavigationStack(adj.nodeFrom))) {
+                adj.setDataset('current', {lineWidth: 4, color: '#f00'});
+            } else {
+                 adj.setDataset('current', {lineWidth: 2, color: '#068'});
             }
         },
         //Attach event handlers and add text to the
