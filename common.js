@@ -77,7 +77,7 @@ $jit.Graph.Node.prototype.moebiusScale = function() {
 function isInNavigationStack(node) {
     var p = node.id.split(".");
     for (var i=1; i<p.length; i++) {
-        if (p[i] != navigationStack[i]) {
+        if (p[i] != navigationStack[i-1]) {
             return false;
         }
     }
@@ -91,6 +91,10 @@ function nodeIdToStack(nodeId) {
         res.push(s[i]);
     }
     return res;
+}
+
+function nodeDepth(nodeId) {
+    return nodeId.split(".").length - 1;
 }
 
 function childrenIncludeTag(children, tag) {
@@ -225,12 +229,12 @@ function getSubtreePlusTags(parentNodeId, tags) {
 
 function addTagsToTree(node, tags, previewResults, continuation) {
     if (continuation === undefined) {
-        previewResults = false;
         if (previewResults === undefined) {
             continuation = function() {};
         } else {
             continuation = previewResults;
         }
+        previewResults = false;
     }
     console.log(navigationStack);
     for (var t in tags) {
@@ -362,10 +366,7 @@ function centerOnNode(node, modified) {
     var doClick = function() {
         viz.onClick(node.id, {
             transition: $jit.Trans.Expo.easeOut,
-            duration: d,
-            modes: {
-                position:'moebius'
-            }
+            duration: d
         });
     };
     
@@ -375,9 +376,6 @@ function centerOnNode(node, modified) {
                 type: 'fade:con',
                 duration: d,
                 transition: $jit.Trans.Expo.easeOut,
-                modes: {
-                    position: 'linear'
-                }
             });
         }
         doMorph();

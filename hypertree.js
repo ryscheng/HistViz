@@ -1,8 +1,21 @@
 
 
 function onNodeClick(node) {
+    function recursiveCleanup(t) {
+        t.children = t.children.filter(function(c) {
+            return isInNavigationStack(c) || c.data.category == "tag";
+        });
+        for (var i=0; i<t.children.length; i++) {
+            recursiveCleanup(t.children[i]);
+        }
+    }
+
     var tree = $jit.json.getSubtree(root, node.id);
     if (node.id == "root") {
+        navigationStack = [];
+
+        recursiveCleanup(root);
+
         generateChildren(node.id, availableTags, true, function() {
             centerOnNode(tree, true);
         });
@@ -15,21 +28,12 @@ function onNodeClick(node) {
         });
     } else {
         navigationStack = nodeIdToStack(node.id);
-        var currLevel = navigationStack.length;
 
-        var d = 1000;
-        $jit.json.eachLevel(root, 0, currLevel, function(t, level) {
-            if (level != 0 && t.data.category == "tag" && !isInNavigationStack(t)) {
-                console.log('level ' + level + ' - ' + t.id);
-                var n = viz.graph.getNode(t.id);
-                viz.op.contract(n, { type: 'animate', duration: d });
-            }
+        recursiveCleanup(root);
+        
+        generateChildren(node.id, availableTags, true, function() {
+            centerOnNode(tree, true);
         });
-        setTimeout(function() {
-            generateChildren(node.id, availableTags, true, function() {
-                centerOnNode(tree, true);
-            });
-        }, d+50);
     }
 }
 
@@ -189,11 +193,11 @@ function init(){
             domElement.innerHTML =  lblhtml;
 
             $jit.util.addEvent(domElement, 'click', function () {
-                if (node.id == "root") {
-                    centerOnNode(root);
-                } else {
+                //if (node.id == "root") {
+                //    centerOnNode(root);
+                //} else {
                     onNodeClick(node);
-                }
+                //}
             });
         },
         //Change node styles when labels are placed
@@ -214,23 +218,23 @@ function init(){
 
             style.fontSize = 1.0 * scale + 'em';
             
-            domElement.title = scale;
+            var relativeDepth = Math.abs(nodeDepth(node.id) - navigationStack.length);
 
-            if (scale > 0.8) {
+            if (relativeDepth == 0) {
                 //console.log("place label for new root: " + node.id);
                 style.size = 15;
                 //style.fontSize = "1.0em";
                 style.color = "#000000";
                 style.backgroundColor = "#F2F2F2";
-            } else if (scale > 0.6) {
+            } else if (relativeDepth == 1) {
                 //style.fontSize = "0.8em";
                 style.color = "#ddd";
                 style.backgroundColor = "#777";
-            } else if(scale > 0.3) {
+            } else if(relativeDepth == 2) {
                 //style.fontSize = "0.7em";
                 style.color = "#555";
                 style.backgroundColor = "#222";
-            } else if (scale > 0.03) {
+            } else if (relativeDepth == 3) {
                 //style.fontSize = "0.4em";
                 style.borderStyle = "none";
                 style.backgroundColor = '';
