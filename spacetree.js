@@ -1,6 +1,11 @@
 
 function removePageNodes(parentNode, continuation) {
     var cs = parentNode.children;
+    if (!cs) {
+        continuation();
+        return;
+    }
+
     var toRemove = [];
     var remaining = [];
     for (var i=0; i<cs.length; i++) {
@@ -35,7 +40,7 @@ function removePageNodes(parentNode, continuation) {
 }
 
 function onNodeClick(node) {
-    if (node.id != 'root') navigationStack.push(node.name);
+    navigationStack = nodeIdToStack(node.id);
     viz.onClick(node.id); // calls 'request' to generate new children
 }
 
@@ -84,7 +89,7 @@ function init(){
         levelDistance: 100,
         //set max levels to show. Useful when used with
         //the request method for requesting trees of specific depth
-        levelsToShow: 2,
+        levelsToShow: 1,
         Navigation: {  
             enable: true,  
             panning: 'avoid nodes',  
@@ -166,7 +171,7 @@ function init(){
                     '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
                     '       '+root.name+'' +
                     '  </div>' +
-                    '  <img src="'+ root.screenshot + '" width=100% />' +
+                    '  <img src="'+ root.data.screenshot + '" width=100% />' +
                     // '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
                     // '    '+node.data.visited_date+'' +
                     // '   </div>' +

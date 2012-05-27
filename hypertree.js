@@ -1,38 +1,11 @@
 
-// morphs tree if modified and centers viz on given node
-function centerOnNode(node, modified) {
-    var doClick = function() {
-        viz.onClick(node.id, {
-            transition: $jit.Trans.Expo.easeOut,
-            duration: moveDuration,
-            modes: {
-                position:'moebius'
-            }
-        });
-    };
-    
-    if (modified) {
-        var doMorph = function() {
-            viz.op.morph(root, {
-                type: 'fade:con',
-                duration: d,
-                transition: $jit.Trans.Expo.easeOut,
-                modes: {
-                    position: 'linear'
-                }
-            });
-        }
-        doMorph();
-        setTimeout(doClick, d+50);
-    } else {
-        doClick();
-    }
-}
 
 function onNodeClick(node) {
+    var tree = $jit.json.getSubtree(root, node.id);
     if (node.id == "root") {
-        addTagChildren(node, availableTags);
-        centerOnNode(node, true);
+        generateChildren(node.id, availableTags, true, function() {
+            centerOnNode(tree, true);
+        });
     } else if (node.data.category == "page") {
         chrome.tabs.getCurrent(function(tab) {
             chrome.tabs.create({
@@ -41,34 +14,40 @@ function onNodeClick(node) {
             });
         });
     } else {
-        navigationStack.push(node.name);
-        addTagChildren(node, availableTags);
-        runSearchFromNode(node, function () {
-            centerOnNode(node, true);
-        }, NUM_EXPANDED_RESULTS);
-            // ht.graph.computeLevels(node.id);
-            // ht.graph.eachBFS(node.id, function(n) {
-            //     if (n._depth >= 2 && !navigationStack.include(n.name) && n.id != "root") {
-            //         ht.labels.disposeLabel(n.id);
-            //         ht.graph.removeNode(n.id);
-            //     }
-            // });
-            // ht.refresh(true);
-            // // move & zoom on node...
-            // ht.onClick(node.id, {
-            //     onComplete: function() {
-            //         ht.controller.onComplete();
-            //     }
-            // });
+        navigationStack = nodeIdToStack(node.id);
+        var currLevel = navigationStack.length;
+
+        var d = 1000;
+        $jit.json.eachLevel(root, 0, currLevel, function(t, level) {
+            if (level != 0 && t.data.category == "tag" && !isInNavigationStack(t)) {
+                console.log('level ' + level + ' - ' + t.id);
+                var n = viz.graph.getNode(t.id);
+                viz.op.contract(n, { type: 'animate', duration: d });
+            }
+        });
+        setTimeout(function() {
+            generateChildren(node.id, availableTags, true, function() {
+                centerOnNode(tree, true);
+            });
+        }, d+50);
     }
 }
 
 function removePageNodes(parentNode, continuation) {
+    removeNodesCond(parentNode, function(node) { return node.data.category == "page" }, continuation);
+}
+
+function removeNodesCond(parentNode, condition, continuation) {
     var cs = parentNode.children;
+    if (!cs) {
+        continuation();
+        return;
+    }
+
     var removeIds = [];
     var keeps = [];
     for (var i=0; i<cs.length; i++) {
-        if (cs[i].data.category == "page") {
+        if (condition(cs[i])) {
             animating = true;
             removeIds.push(cs[i].id);
         } else {
@@ -85,6 +64,17 @@ function removePageNodes(parentNode, continuation) {
     setTimeout(continuation, d+50);
 }
 
+function rootLabelHTML() {
+    var lblhtml = ''+
+        '<div id="rootlbl" style="positioning:relative; top:-100px; width:100%; ' +
+        'border-style:solid; border-width:2px; border-color:#444" >' +
+        '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
+        '       '+root.name+'' +
+        '  </div>' +
+        '  <img src="'+ root.data.screenshot + '" width=100% />' +
+        '</div>';
+    return lblhtml;
+}
 
 
 function init(){
@@ -119,6 +109,12 @@ function init(){
         //canvas width and height
         width: w,
         height: h,
+
+        Navigation: {
+            enable: true,
+            panning: 'avoid nodes',
+            zooming: 20
+        },
         //Change node and edge styles such as
         //color, width and dimensions.
         Node: {
@@ -165,34 +161,28 @@ function init(){
         //creation
         onCreateLabel: function(domElement, node){
             var style = domElement.style;
+            var scale = node.moebiusScale();
             var lblhtml;
             // console.log(node.data.category)
-            if (node.id === "root") {
-                var lblhtml = ''+
-                    '<div id="rootlbl" style="positioning:relative; top:-100px; width:100%; ' +
-                    'border-style:solid; border-width:2px; border-color:#444" >' +
-                    '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
-                    '       '+node.name+'' +
-                    '  </div>' +
-                    '  <img src="'+ node.data.screenshot + '" width=100% />' +
-                    '</div>';
-                domElement.innerHTML = lblhtml;
-                style.width=Math.max(200*(4-node._depth)/4,20)+'px';
+            if (node.id == "root") {
+                console.log("root html");
+                domElement.innerHTML = rootLabelHTML();
+                style.width=Math.max(200*scale,20)+'px';
             } else if (node.data.category == "tag") {
                 lblhtml = node.name 
             } else if (node.data.category == "page") {
                 domElement.title = node.name + "\n" + node.data.url;
-                style.width=200*node.depthScale()+'px';
+                style.width=200*scale+'px';
                 style.borderStyle="solid";
                 style.borderWidth="2px";
                 style.borderColor="#444";
 
                 lblhtml = ''+
                     '  <img src="chrome://favicon/' + node.data.url + '" />' +
-                    '  <div style="font-size:'+1.0*node.depthScale()+'em; font-weight:bold">' +
+                    '  <div style="font-weight:bold">' +
                     '       '+node.name+'' +
                     '  </div>' +
-                    '  <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
+                    '  <div style="font-weight:lighter">' +
                     '    '+node.data.visited_date+
                     '  </div>';
             }
@@ -210,35 +200,46 @@ function init(){
         //or moved.
         onPlaceLabel: function(domElement, node){
             var style = domElement.style;
-
-            if (node.id === "root") {
-                style.width=Math.max(200*(4-node._depth)/4,20)+'px';
+            var scale = node.moebiusScale();
+            
+            if (node.id == "root") {
+                style.width=Math.max(200*scale,20)+'px';
+            } else if (node.data.category == "page") {
+                style.width = Math.max(200*scale, 50);
             }
 
             style.display = '';
             style.cursor = 'pointer';
             style.opacity = 1.0;
 
-            if (node._depth == 0) {
+            style.fontSize = 1.0 * scale + 'em';
+            
+            domElement.title = scale;
+
+            if (scale > 0.8) {
                 //console.log("place label for new root: " + node.id);
                 style.size = 15;
-                style.fontSize = "1.0em";
+                //style.fontSize = "1.0em";
                 style.color = "#000000";
                 style.backgroundColor = "#F2F2F2";
-            } else if (node._depth <= 1) {
-                style.fontSize = "0.8em";
+            } else if (scale > 0.6) {
+                //style.fontSize = "0.8em";
                 style.color = "#ddd";
                 style.backgroundColor = "#777";
-            } else if(node._depth == 2){
-                style.fontSize = "0.7em";
+            } else if(scale > 0.3) {
+                //style.fontSize = "0.7em";
                 style.color = "#555";
                 style.backgroundColor = "#222";
-            } else {
-                style.fontSize = "0em";
+            } else if (scale > 0.03) {
+                //style.fontSize = "0.4em";
                 style.borderStyle = "none";
                 style.backgroundColor = '';
                 // style.color = "#333";
                 //style.display = 'none';
+            } else {
+                style.borderStyle = "none";
+                style.backgroundColor = '';
+                style.fontSize = "0em";
             }
 
             var left = parseInt(style.left);
@@ -251,11 +252,11 @@ function init(){
         }
     });
     //load JSON data.
-    viz.loadJSON(json_empty);
+    viz.loadJSON(root);
     //compute positions and plot.
     viz.refresh(true);
     //end
-    ht.controller.onComplete();
+    viz.controller.onComplete();
 
     while (callbackAfterInit.length > 0) {
         (callbackAfterInit.shift())();

@@ -1,8 +1,5 @@
 chrome.extension.onRequest.addListener(handleRequests);
 
-NUM_TAGS=7;
-var availableTags;
-var navigationStack = [];
 
 function handleRequests(request, sender, sendResponse) {
     if (request.receiver == "rootScreenshot") {
