@@ -1,4 +1,3 @@
-var labelType, useGradients, nativeTextSupport, animate;
 
 var ht;
 var backNode;
@@ -11,102 +10,8 @@ var rootName;
 var callbackAfterInit = [];
 var callbackAfterReceiveRoot = [];
 
-Date.prototype.format = function() {
-    var m_names = new Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec");
-    return m_names[this.getMonth()] + ' ' + this.getDate() + ', ' + this.getFullYear();
-}
-
-String.prototype.supplant = function (o) {
-    return this.replace(/{([^{}]*)}/g,
-        function (a, b) {
-            var r = o[b];
-            return typeof r === 'string' || typeof r === 'number' ? r : a;
-        }
-    );
-};
-
-Array.prototype.include = function(item) {
-	for (var i=0; i<this.length; i++) {
-		if (this[i] == item) {
-			return true;
-		}
-	}
-	return false;
-};
-
-if (!Array.prototype.filter)
-{
-  Array.prototype.filter = function(fun /*, thisp*/)
-  {
-    var len = this.length;
-    if (typeof fun != "function")
-      throw new TypeError();
-
-    var res = new Array();
-    var thisp = arguments[1];
-    for (var i = 0; i < len; i++)
-    {
-      if (i in this)
-      {
-        var val = this[i]; // in case fun mutates this
-        if (fun.call(thisp, val, i, this))
-          res.push(val);
-      }
-    }
-
-    return res;
-  };
-}
-
-function isInNavigationStack(node) {
-  var p = node.id.split(".");
-  for (var i=1; i<p.length; i++) {
-    if (p[i] != navigationStack[i]) {
-      return false;
-    }
-  }
-  return true;
-}
-
-
-(function() {
-  var ua = navigator.userAgent,
-      iStuff = ua.match(/iPhone/i) || ua.match(/iPad/i),
-      typeOfCanvas = typeof HTMLCanvasElement,
-      nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
-      textSupport = nativeCanvasSupport 
-        && (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
-  //I'm setting this based on the fact that ExCanvas provides text support for IE
-  //and that as of today iPhone/iPad current text support is lame
-  labelType = (!nativeCanvasSupport || (textSupport && !iStuff))? 'Native' : 'HTML';
-  nativeTextSupport = labelType == 'Native';
-  useGradients = nativeCanvasSupport;
-  animate = !(iStuff || !nativeCanvasSupport);
-})();
-
-String.prototype.hashCode = function(){
-	var hash = 0;
-	if (this.length == 0) return hash;
-	for (i = 0; i < this.length; i++) {
-		c = this.cCodeAt(i);
-		hash = ((hash<<5)-hash)+c;
-		hash = hash & hash; // Convert to 32bit integer
-	}
-	return hash;
-}
-
-var Log = {
-  elem: false,
-  write: function(text){
-    if (!this.elem) 
-      this.elem = document.getElementById('log');
-    this.elem.innerHTML = text;
-    this.elem.style.left = (500 - this.elem.offsetWidth / 2) + 'px';
-  }
-};
-
 $jit.Graph.Node.prototype.depthScale = function() {
-    return 1; //return (4-this._depth)/4;
+    return 1;
 }
 
 function receiveRootScreenshot(screenshot) {

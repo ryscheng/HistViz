@@ -1,42 +1,45 @@
-var labelType, useGradients, nativeTextSupport, animate;
 
-(function() {
-  var ua = navigator.userAgent,
-      iStuff = ua.match(/iPhone/i) || ua.match(/iPad/i),
-      typeOfCanvas = typeof HTMLCanvasElement,
-      nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
-      textSupport = nativeCanvasSupport 
-        && (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
-  //I'm setting this based on the fact that ExCanvas provides text support for IE
-  //and that as of today iPhone/iPad current text support is lame
-  labelType = (!nativeCanvasSupport || (textSupport && !iStuff))? 'Native' : 'HTML';
-  nativeTextSupport = labelType == 'Native';
-  useGradients = nativeCanvasSupport;
-  animate = !(iStuff || !nativeCanvasSupport);
-})();
+function removePageNodes(parentNode, continuation) {
+    var cs = parentNode.children;
+    var toRemove = [];
+    var remaining = [];
+    for (var i=0; i<cs.length; i++) {
+        var n = cs[i];
+        if (n.data.category == "page") {
+            toRemove.push(n);
+        } else {
+            remaining.push(n);
+        }
+    }
+    parentNode.children = remaining;
+    
+    var removePage = function (cs, i) {
+        var n = cs[i];
 
-var Log = {
-  elem: false,
-  write: function(text){
-    if (!this.elem) 
-      this.elem = document.getElementById('log');
-    this.elem.innerHTML = text;
-    this.elem.style.left = (500 - this.elem.offsetWidth / 2) + 'px';
-  }
-};
+        if (n.data.category == "page") {
+            viz.removeSubtree(n.id, true, 'animate', {
+                duration: 100,
+                onComplete: (i+1 < cs.length) ? 
+                      function () { removePage(cs, i+1); } 
+                    : continuation
+            });
+        } else {
+            if (i+1 < cs.length) { removePage(cs, i+1); } else { continuation(); }
+        }
+    }
+    if (toRemove.length > 0) {
+        removePage(toRemove, 0);
+    } else {
+        continuation();
+    }
+}
 
-var st;
-var tree;
+function onNodeClick(node) {
+    if (node.id != 'root') navigationStack.push(node.name);
+    viz.onClick(node.id); // calls 'request' to generate new children
+}
 
 function init(){
-    // init data
-    tree = {
-        "id": "root",
-        "name": "",
-        "data": {
-        }
-    };
-    
     //Implement a node rendering function called 'nodeline' that plots a straight line
     //when contracting or expanding a subtree.
     $jit.ST.Plot.NodeTypes.implement({
@@ -65,7 +68,7 @@ function init(){
 
     //init Spacetree
     //Create a new ST instance
-    st = new $jit.ST({
+    viz = new $jit.ST({
         injectInto: 'infovis',
         orientation: 'left',
         align: 'center',
@@ -82,7 +85,11 @@ function init(){
         //set max levels to show. Useful when used with
         //the request method for requesting trees of specific depth
         levelsToShow: 2,
-        
+        Navigation: {  
+            enable: true,  
+            panning: 'avoid nodes',  
+            zooming: 20  
+        },
         //set node and edge styles
         //set overridable=true for styling individual
         //nodes or edges
@@ -120,13 +127,8 @@ function init(){
             console.log("request: " + nodeId);
             var f = function() {
                 if (nodeId == "root") {
-                  onComplete.onComplete(nodeId, createTagSubtree(nodeId, availableTags));
+                  onComplete.onComplete(nodeId, getSubtreePlusTags(nodeId, availableTags));
                 } else {
-                  //addTagChildren(nodeId, availableTags, function(ans) {
-                  //  console.log("cont");
-                  //  console.log(ans);
-                  //  onComplete.onComplete(nodeId, ans);
-                  //});
                   generateChildren(nodeId, availableTags, function(ans) {
                     onComplete.onComplete(nodeId, ans);
                   });
@@ -162,9 +164,9 @@ function init(){
                     '<div id="rootlbl" style="positioning:relative; top:-100px; width:100%; ' +
                     'border-style:solid; border-width:2px; border-color:#444" >' +
                     '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
-                    '       '+rootName+'' +
+                    '       '+root.name+'' +
                     '  </div>' +
-                    '  <img src="'+ rootScreenshot + '" width=100% />' +
+                    '  <img src="'+ root.screenshot + '" width=100% />' +
                     // '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
                     // '    '+node.data.visited_date+'' +
                     // '   </div>' +
@@ -193,27 +195,14 @@ function init(){
                         node.data.visited_date + 
                     '</span>';
 
-                // console.log(node.getData("dim"))
-                // lblhtml += "<img src='img/thumb-google.png' width='" + node.getData("dim")*2 + "em' height='" + node.getData("dim")*2 + "em'></img>"
-                // lblhtml += "<img src='img/thumb-google.png' class=node_thumbnail></img>"
-                // lblhtml += "<img src='chrome://favicon/" + node.data.url + "'></img>"
-                // lblhtml += "<div style='font-size:0.5em; font-weight:lighter'>" + node.data.visited_date + " - " + node.data.visited_time + "</div>"
             }
             label.innerHTML =  lblhtml;
 
-            //label.id = node.id;            
-            //label.innerHTML = node.name;
             label.onclick = function(){
-                if (node.data.category == "page") {
-			              chrome.tabs.getCurrent(function(tab) {
-			                  chrome.tabs.create({
-			    	                url:node.data.url,
-			    	                index: tab.index+1
-			                  });
-  	                });
-			          } else {
-                    navigationStack.push(node.name);
-                    st.onClick(node.id);
+                if (node.id == 'root') {
+			        centerOnNode(root);
+                } else {
+                    onNodeClick(node);
                 }
             };
             //set label styles
@@ -261,18 +250,15 @@ function init(){
         }
     });
     //load json data
-    st.loadJSON(tree);
+    viz.loadJSON(root);
     //compute node positions and layout
-    st.compute();
+    viz.compute();
     //emulate a click on the root node.
     //end
 
     while (callbackAfterInit.length > 0) {
-      var f = callbackAfterInit.shift();
-      f(infovis);
+      (callbackAfterInit.shift())(infovis);
     }
-    
-
 }
 
 window.onload = init;
