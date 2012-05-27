@@ -26,22 +26,24 @@ function startHistViz(tab) {
   	  current_screenshot = dataurl;
       chrome.tabs.create({url:chrome.extension.getURL("graph_test.html"), index:srctab.index+1}, function(tab) {
         histviztab = tab;
-        var tags = webtags.lookup(domain);
-        if (metatags.hasOwnProperty(srctab.url)) {
-          tags = tags.concat(metatags[srctab.url]);
-        }
-        console.log("Created viz @"+srctab.url);
-        console.log(tags);
-        chrome.tabs.sendRequest(histviztab.id, {receiver:'rootScreenshot', screenshot:current_screenshot });
-        chrome.tabs.sendRequest(histviztab.id, {
-          receiver:'initialKeywords', 
-          root: true, 
-          domain: domain, 
-          title: title, 
-          url: srctab.url, 
-          tags: tags, 
-          screenshot: current_screenshot});
-      });
+        setTimeout(function() {
+          var tags = webtags.lookup(domain);
+          if (metatags.hasOwnProperty(srctab.url)) {
+            tags = tags.concat(metatags[srctab.url]);
+          }
+          console.log("Created viz @"+srctab.url);
+          console.log(tags);
+          chrome.tabs.sendRequest(histviztab.id, {receiver:'rootScreenshot', screenshot:current_screenshot });
+          chrome.tabs.sendRequest(histviztab.id, {
+            receiver:'initialKeywords', 
+            root: true, 
+            domain: domain, 
+            title: title, 
+            url: srctab.url, 
+            tags: tags, 
+            screenshot: current_screenshot});
+        }, 100); //put in a bit of a delay
+      }); 
     });
   });
 }
