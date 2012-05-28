@@ -182,6 +182,8 @@ function tagBoxClicked(tag){
 }
 
 function addTagToSidebar(tag, ifchecked){
+    var f = function() {
+    
     var chk = document.createElement("INPUT");
     chk.setAttribute("type","checkbox");
     chk.setAttribute("name",tag+'_box_');
@@ -201,6 +203,14 @@ function addTagToSidebar(tag, ifchecked){
     newCol.appendChild(chk);
     newRow.appendChild(newCol);
     table.appendChild(newRow);
+
+    }
+
+    if (document.getElementById('filtertable') == null) {
+        setTimeout(f, 100);
+    } else {
+        f();
+    }
 }
 
 function receiveRootScreenshot(screenshot) {
