@@ -338,13 +338,13 @@ function receiveHistoryResultsForNode(node, items, continuation) {
     if (items.length == 0) {
         // remove tree if no matches
         console.log("remove tree " + tree.name);
-        var d = 1000;
-        if (viz.graph.getNode(node.id)) {
-            viz.op.removeNode(node.id, {
-                type: 'fade:con',  
-                duration: d
-            });
-        }
+        //var d = 1000;
+        //if (viz.graph.getNode(node.id)) {
+        //    viz.op.removeNode(node.id, {
+        //        type: 'fade:con',  
+        //        duration: d
+        //    });
+        //}
         //viz.labels.disposeLabel(tree.id);
     }
     for (var i=0; i<items.length; i++) {
