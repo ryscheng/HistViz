@@ -40,8 +40,17 @@ function removePageNodes(parentNode, continuation) {
 }
 
 function onNodeClick(node) {
-    navigationStack = nodeIdToStack(node.id);
-    viz.onClick(node.id); // calls 'request' to generate new children
+    if (node.data.category == "page") {
+        chrome.tabs.getCurrent(function(tab) {
+            chrome.tabs.create({
+                url:node.data.url,
+            index: tab.index+1
+            });
+        });
+    } else {
+        navigationStack = nodeIdToStack(node.id);
+        viz.onClick(node.id); // calls 'request' to generate new children
+    }
 }
 
 function rootLabelHTML() {
