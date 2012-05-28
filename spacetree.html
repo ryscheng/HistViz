@@ -1,0 +1,43 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Graph Viz Test</title>
+
+<!-- CSS Files -->
+<link type="text/css" href="css/base.css" rel="stylesheet" />
+
+<!-- JIT Library File -->
+<script language="javascript" type="text/javascript" src="js/jit.js"></script>
+<!-- For some reason when I try to include jquery.min.js here it causes the 'inspect element' contextual menu to not work. Maybe I have the wrong version of jQuery? -->
+<!-- <script language="javascript" type="text/javascript" src="js/jquery.min.js"></script> -->
+
+<!-- Example File -->
+<script language="javascript" type="text/javascript" src="hardcoded_tags.js"></script>
+<script language="javascript" type="text/javascript" src="graph_search.js"></script>
+<script language="javascript" type="text/javascript" src="common.js"></script>
+<script language="javascript" type="text/javascript" src="spacetree.js"></script>
+
+</head>
+
+<body>
+<div id="container">
+
+<!-- <div id="left-container">         -->
+<!-- </div> -->
+
+<div id="center-container">
+    <div id="infovis"></div>    
+</div>
+
+<div id="right-container">
+    <h4>Tags Available to Graph:</h4>
+    <form name="filter">
+      <table id="filtertable">
+      </table>
+    </form>
+</div>
+
+<div id="log"></div>
+</div>
+</body>
+</html>

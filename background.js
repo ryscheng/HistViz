@@ -1,4 +1,6 @@
 init();
+var spacetreetab;
+var hypertreetab;
 var histviztab;
 var current_screenshot;
 var metatags = new Object();
@@ -15,7 +17,8 @@ function init() {
 
 function startHistViz(tab) {
   // extract keywords from the current page
-  histviztab = null;
+  hypertreetab = null;
+  spacetreetab = null;
   current_screenshot = null;
   chrome.tabs.query({active: true, windowId: chrome.windows.WINDOW_ID_CURRENT}, function(tabs) {
     var srctab = tabs[0];
@@ -24,26 +27,38 @@ function startHistViz(tab) {
     var domain = srctab.url.split("/")[2];
     chrome.tabs.captureVisibleTab(function(dataurl) {
   	  current_screenshot = dataurl;
-      chrome.tabs.create({url:chrome.extension.getURL("graph_test.html"), index:srctab.index+1}, function(tab) {
-        histviztab = tab;
-        setTimeout(function() {
-          var tags = webtags.lookup(domain);
-          if (metatags.hasOwnProperty(srctab.url)) {
-            tags = tags.concat(metatags[srctab.url]);
-          }
-          console.log("Created viz @"+srctab.url);
-          console.log(tags);
-          chrome.tabs.sendRequest(histviztab.id, {receiver:'rootScreenshot', screenshot:current_screenshot });
-          chrome.tabs.sendRequest(histviztab.id, {
-            receiver:'initialKeywords', 
-            root: true, 
-            domain: domain, 
-            title: title, 
-            url: srctab.url, 
-            tags: tags, 
-            screenshot: current_screenshot});
-        }, 100); //put in a bit of a delay
-      }); 
+      chrome.tabs.create({url:chrome.extension.getURL("spacetree.html"), index:srctab.index+1}, function(tab) {
+        spacetreetab = tab;
+        chrome.tabs.create({url:chrome.extension.getURL("hypertree.html"), index:srctab.index+1}, function(tab) {
+          hypertreetab = tab;
+          setTimeout(function() {
+            var tags = webtags.lookup(domain);
+            if (metatags.hasOwnProperty(srctab.url)) {
+              tags = tags.concat(metatags[srctab.url]);
+            }
+            console.log("Created viz @"+srctab.url);
+            console.log(tags);
+            chrome.tabs.sendRequest(hypertreetab.id, {receiver:'rootScreenshot', screenshot:current_screenshot });
+            chrome.tabs.sendRequest(spacetreetab.id, {receiver:'rootScreenshot', screenshot:current_screenshot });
+            chrome.tabs.sendRequest(hypertreetab.id, {
+              receiver:'initialKeywords', 
+              root: true, 
+              domain: domain, 
+              title: title, 
+              url: srctab.url, 
+              tags: tags, 
+              screenshot: current_screenshot});
+            chrome.tabs.sendRequest(spacetreetab.id, {
+              receiver:'initialKeywords', 
+              root: true, 
+              domain: domain, 
+              title: title, 
+              url: srctab.url, 
+              tags: tags, 
+              screenshot: current_screenshot});
+          }, 100); //put in a bit of a delay
+        });
+      });
     });
   });
 }
