@@ -262,8 +262,8 @@ function addTagsToTree(node, tags, previewResults, continuation) {
     if (previewResults) {
         var genPreview = function(children, i) {
             var child = children[i];
-            console.log(children);
-            console.log(i + " - " + child.data);
+            //console.log(children);
+            //console.log(i + " - " + child.data);
             if (child.data.category == "tag") {
                 runSearchFromNode(child, function() {
                     if (i+1<children.length) {
@@ -363,9 +363,7 @@ function receiveHistoryResultsForNode(node, items, continuation) {
                 },
                 children: []
             };
-            //if (!childrenInclude(tree.children, 'id', n.id)) {
             tree.children.push(n);
-            //}
         }
     }
     continuation(tree);

@@ -54,15 +54,21 @@ function runSearchFromNode(node, cont, numResults) {
     for (var i=0; i<navigationStack.length; i++) { query += ' ' + navigationStack[i]; }
     console.log("query: " + query);
 
-    chrome.history.search({text: query, startTime: 0, maxResults: numResults}, function(results) {
+    chrome.history.search({text: query, startTime: 0, maxResults: 50}, function(results) {
         var qr = [];
+        var extensionResults = 0;
+        var i = 0;
         for (var i=0; i<results.length; i++) {
             var r = results[i];
             if (r.url.indexOf("chrome-extension") == -1) {
                 r.type = "page";
                 qr.push(r);
+                if (qr.length == numResults) break;
+            } else {
+                extensionResults++;
             }
         }
+        console.log("chrome-extension results: " + extensionResults);
         receiveHistoryResultsForNode(node, qr, cont);
     });
 }
