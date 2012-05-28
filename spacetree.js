@@ -44,6 +44,21 @@ function onNodeClick(node) {
     viz.onClick(node.id); // calls 'request' to generate new children
 }
 
+function rootLabelHTML() {
+    return '<div id="rootlbl" style="positioning:relative; top:-100px; width:100%; ' +
+           '  border-style:solid; border-width:2px; border-color:#444" >' +
+           '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
+           '       '+root.name+'' +
+           '  </div>' +
+           '  <img src="'+ root.data.screenshot + '" width=100% />' +
+           '</div>';
+}
+
+function updateLabel(id, innerHTML) {
+    //viz.labels.clearLabels();
+    //viz.refresh(true);
+}
+
 function init(){
     //Implement a node rendering function called 'nodeline' that plots a straight line
     //when contracting or expanding a subtree.
@@ -141,6 +156,7 @@ function init(){
             };
 
             if (availableTags === undefined) {
+                console.log("register callback for request");
                 callbackAfterReceiveRoot.push(f);
             } else {
                 f();
@@ -163,21 +179,7 @@ function init(){
             var lblhtml; // = "<div style='font-size:1.0em'>" + node.name + "</div>";
             // console.log(node.data.category)
             if (node.id == "root") {
-                if (node.data.alreadySet != true) {
-                    node.data.alreadySet = true;
-                    var lblhtml = ''+
-                    '<div id="rootlbl" style="positioning:relative; top:-100px; width:100%; ' +
-                    'border-style:solid; border-width:2px; border-color:#444" >' +
-                    '  <div style="font-size:'+1.25+'em; font-weight:bold">' +
-                    '       '+root.name+'' +
-                    '  </div>' +
-                    '  <img src="'+ root.data.screenshot + '" width=100% />' +
-                    // '    <div style="font-size:'+0.5*node.depthScale()+'em; font-weight:lighter">' +
-                    // '    '+node.data.visited_date+'' +
-                    // '   </div>' +
-                    '</div>';
-                    label.innerHTML = lblhtml;
-                }
+                lblhtml = rootLabelHTML();
                 style.width=Math.max(100*(4-node._depth)/4,20)+'px';
              
             } else if (node.data.category == "tag") {
@@ -260,6 +262,7 @@ function init(){
     viz.compute();
     //emulate a click on the root node.
     //end
+    viz.refresh();
 
     while (callbackAfterInit.length > 0) {
       (callbackAfterInit.shift())(infovis);

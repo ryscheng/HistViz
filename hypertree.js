@@ -80,6 +80,10 @@ function rootLabelHTML() {
     return lblhtml;
 }
 
+function updateLabel(id, innerHTML) {
+    var label = viz.labels.getLabel(id);
+    label.innerHTML = innerHTML;
+}
 
 function init(){
     //init data

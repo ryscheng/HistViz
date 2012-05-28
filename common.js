@@ -5,7 +5,7 @@ var root = {
     id: 'root',
     name: '',
     data: {
-        category: "root",
+        category: 'root',
         screenshot: 'img/icon.png'
     },
     children: []
@@ -187,8 +187,8 @@ function addTagToSidebar(tag, ifchecked){
     chk.setAttribute("name",tag+'_box_');
     chk.setAttribute("title", tag);
 
-    console.log("tag: "); + tag
-        chk.onclick = function() { tagBoxClicked(tag); };
+    console.log("tag: " + tag);
+    chk.onclick = function() { tagBoxClicked(tag); };
     chk.checked = ifchecked;
 
     var table = document.getElementById('filtertable');
@@ -207,8 +207,7 @@ function receiveRootScreenshot(screenshot) {
     root.data.screenshot = screenshot;
     if (viz != undefined) {
         console.log("clearing labels");
-        var label = viz.labels.getLabel('root');
-        label.innerHTML = rootLabelHTML();
+        updateLabel('root', rootLabelHTML());
     }
 }
 
@@ -311,12 +310,12 @@ function receiveRoot(res) {
         while (callbackAfterReceiveRoot.length > 0) {
             (callbackAfterReceiveRoot.shift())();
         }
-        var rootLabel = viz.labels.getLabel('root');
-        rootLabel.innerHTML = rootLabelHTML();
+        updateLabel('root', rootLabelHTML());
         onNodeClick(root);
     };
 
     if (viz) {
+        console.log('running directly');
         w(document.getElementById('infovis'));
     } else {
         callbackAfterInit.push(w);
