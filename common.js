@@ -209,27 +209,25 @@ function tagBoxClicked(tag) {
 
 function addTagToSidebar(tag, ifchecked){
     var f = function() {
-    
-    var chk = document.createElement("INPUT");
-    chk.setAttribute("type","checkbox");
-    chk.setAttribute("name",tag+'_box_');
-    chk.setAttribute("title", tag);
+        var chk = document.createElement("INPUT");
+        chk.setAttribute("type","checkbox");
+        chk.setAttribute("name",tag+'_box_');
+        chk.setAttribute("id", tag+'_box_id');
 
-    console.log("tag: " + tag);
-    chk.onclick = function() { tagBoxClicked(tag); };
-    chk.checked = ifchecked;
+        console.log("tag: " + tag);
+        chk.onclick = function() { tagBoxClicked(tag); };
+        chk.checked = ifchecked;
 
-    var table = document.getElementById('filtertable');
-    var newRow = document.createElement("tr");
-    var newCol = document.createElement("td");
-    var newTxt = document.createTextNode(tag);
+        var lbl = document.createElement("label");
+        lbl.setAttribute("for", tag+'_box_id');
+        lbl.innerHTML = tag;
 
-
-    newCol.appendChild(newTxt);
-    newCol.appendChild(chk);
-    newRow.appendChild(newCol);
-    table.appendChild(newRow);
-
+        var div = document.createElement("div");
+        div.appendChild(chk);
+        div.appendChild(lbl);
+        
+        var table = document.getElementById('filtertable');
+        table.appendChild(div);
     }
 
     if (document.getElementById('filtertable') == null) {
@@ -358,14 +356,12 @@ function receiveHistoryResultsForNode(node, items, continuation) {
     if (items.length == 0) {
         // remove tree if no matches
         console.log("remove tree " + tree.name);
-        //var d = 1000;
-        //if (viz.graph.getNode(node.id)) {
-        //    viz.op.removeNode(node.id, {
-        //        type: 'fade:con',  
-        //        duration: d
-        //    });
-        //}
-        //viz.labels.disposeLabel(tree.id);
+        var d = 1000;
+
+        var parentTree = $jit.json.getParent(root, node.id);
+        parentTree.children = parentTree.children.filter(function(child) {
+            return child.id != node.id;
+        });
     }
     for (var i=0; i<items.length; i++) {
         if (items[i].tag) { // if it's a tag
