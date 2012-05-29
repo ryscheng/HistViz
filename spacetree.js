@@ -29,6 +29,7 @@ function updateLabel(id, innerHTML) {
 }
 
 function init(){
+    
     //Implement a node rendering function called 'nodeline' that plots a straight line
     //when contracting or expanding a subtree.
     $jit.ST.Plot.NodeTypes.implement({

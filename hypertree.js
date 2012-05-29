@@ -138,7 +138,7 @@ function init(){
         },
         onBeforePlotLine: function(adj) {
             if (isInNavigationStack(adj.nodeTo) && (adj.nodeFrom.id == 'root' || isInNavigationStack(adj.nodeFrom))) {
-                adj.setDataset('current', {lineWidth: 4, color: '#f00'});
+                adj.setDataset('current', {lineWidth: 4, color: '#fff'});
             } else {
                  adj.setDataset('current', {lineWidth: 2, color: '#068'});
             }
@@ -189,17 +189,21 @@ function init(){
             var style = domElement.style;
             var scale = node.moebiusScale();
             
+            var fontMultiplier = 1.0;
+
             if (node.id == "root") {
                 style.width=Math.max(200*scale,20)+'px';
             } else if (node.data.category == "page") {
                 style.width = Math.max(200*scale, 50);
+            } else if (node.data.category == "tag") {
+                fontMultiplier = 1.5;
             }
 
             style.display = '';
             style.cursor = 'pointer';
             style.opacity = 1.0;
 
-            style.fontSize = 1.0 * scale + 'em';
+            style.fontSize = fontMultiplier * scale + 'em';
             
             var relativeDepth = Math.abs(nodeDepth(node.id) - navigationStack.length);
 
@@ -227,6 +231,11 @@ function init(){
                 style.borderStyle = "none";
                 style.backgroundColor = '';
                 style.fontSize = "0em";
+            }
+
+            if (node.data.category == "tag") {
+                style.backgroundColor = "3a3";
+                domElement.title = "Expand node."
             }
 
             var left = parseInt(style.left);
