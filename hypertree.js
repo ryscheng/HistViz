@@ -16,7 +16,7 @@ function onNodeClick(node) {
 
         recursiveCleanup(root);
 
-        generateChildren(node.id, availableTags, true, function() {
+        generateChildren(node.id, availableTags, function() {
             centerOnNode(tree, true);
         });
     } else if (node.data.category == "page") {
@@ -31,41 +31,10 @@ function onNodeClick(node) {
 
         recursiveCleanup(root);
         
-        generateChildren(node.id, availableTags, true, function() {
+        generateChildren(node.id, availableTags, function() {
             centerOnNode(tree, true);
         });
     }
-}
-
-function removePageNodes(parentNode, continuation) {
-    removeNodesCond(parentNode, function(node) { return node.data.category == "page" }, continuation);
-}
-
-function removeNodesCond(parentNode, condition, continuation) {
-    var cs = parentNode.children;
-    if (!cs) {
-        continuation();
-        return;
-    }
-
-    var removeIds = [];
-    var keeps = [];
-    for (var i=0; i<cs.length; i++) {
-        if (condition(cs[i])) {
-            animating = true;
-            removeIds.push(cs[i].id);
-        } else {
-            keeps.push(cs[i]);
-        }
-    }
-    parentNode.children = keeps;
-    var d = 1000;
-    viz.op.removeNode(removeIds, { 
-        type: 'fade:con',  
-        duration: d
-    });
-
-    setTimeout(continuation, d+50);
 }
 
 function rootLabelHTML() {
@@ -109,6 +78,8 @@ function init(){
             }
         }
     });
+
+    previewResults = true;
 
     //init Hypertree
     viz = new $jit.Hypertree({

@@ -1,44 +1,4 @@
 
-function removePageNodes(parentNode, continuation) {
-    var cs = parentNode.children;
-    if (!cs) {
-        continuation();
-        return;
-    }
-
-    var toRemove = [];
-    var remaining = [];
-    for (var i=0; i<cs.length; i++) {
-        var n = cs[i];
-        if (n.data.category == "page") {
-            toRemove.push(n);
-        } else {
-            remaining.push(n);
-        }
-    }
-    parentNode.children = remaining;
-    
-    var removePage = function (cs, i) {
-        var n = cs[i];
-
-        if (n.data.category == "page") {
-            viz.removeSubtree(n.id, true, 'animate', {
-                duration: 100,
-                onComplete: (i+1 < cs.length) ? 
-                      function () { removePage(cs, i+1); } 
-                    : continuation
-            });
-        } else {
-            if (i+1 < cs.length) { removePage(cs, i+1); } else { continuation(); }
-        }
-    }
-    if (toRemove.length > 0) {
-        removePage(toRemove, 0);
-    } else {
-        continuation();
-    }
-}
-
 function onNodeClick(node) {
     if (node.data.category == "page") {
         chrome.tabs.getCurrent(function(tab) {

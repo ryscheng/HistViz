@@ -10,7 +10,8 @@ var root = {
     },
     children: []
 };
-var current; // currently centered node
+
+var previewResults = false; // whether or not to show preview of results of query at a node
 var availableTags;
 var navigationStack = [];
 
@@ -92,6 +93,13 @@ function nodeIdToStack(nodeId) {
     }
     return res;
 }
+function currentNodeId() {
+    var id = 'root';
+    for (var i=0; i<navigationStack.length; i++) {
+        id += '.' + navigationStack[i];
+    }
+    return id;
+}
 
 function nodeDepth(nodeId) {
     return nodeId.split(".").length - 1;
@@ -150,23 +158,41 @@ function clearSidebar() {
     }
 }
 
-function tagBoxClicked(tag){
-    var d = 1000;
+function tagBoxClicked(tag) {
+    var d = 500;
     availableTags[tag] = ! availableTags[tag];
     console.log("availableTags for " + tag + ": " + availableTags[tag]);
     if( availableTags[tag]){
         console.log("start using tag: " + tag);
-
-        $jit.json.each(root, function(node) {
-            if (node.id == "root" || (node.data.category == "tag" && node.children.length > NUM_PREVIEW_RESULTS)) {
-                addTagsToTree(node, availableTags);
-            }
-        });
-        viz.op.morph(root, {
-            type: 'fade:seq',
-            duration: d,
-            transition: $jit.Trans.Expo.easeOut
-        });
+        
+        function doMorph() {
+            viz.op.morph(root, {
+                type: 'fade:seq',
+                duration: d,
+                transition: $jit.Trans.Sine.easeInOut
+            });
+        }
+        var id = currentNodeId();
+        console.log("currentNode: " + id);
+        var t = $jit.json.getSubtree(root, currentNodeId());
+        var obj = {};
+        obj[tag] = true;
+        addTagsToTree(t, obj, doMorph, true);
+ 
+            //if (t.id == "root" || (t.data.category == "tag" && t.children.length > NUM_PREVIEW_RESULTS)) {
+            //    console.log("## add node for tag: " + t.id);
+            //    addTagsToTree(t, availableTags, function() {
+            //        console.log("previewResults=" + previewResults + ", t.name=" + t.name);
+            //        if (previewResults && t.name == tag) {
+            //            console.log("generating preview for " + t.id);
+            //            runSearchFromNode(t, function() {
+            //                doMorph();
+            //            });
+            //        } else {
+            //            doMorph();
+            //        }
+            //    }, false);
+            //}
     }
     else {
         console.log("stop using tag: " + tag);
@@ -176,7 +202,7 @@ function tagBoxClicked(tag){
         viz.op.morph(root, {
             type: 'fade:seq',
             duration: d,
-            transition: $jit.Trans.Expo.easeOut
+            transition: $jit.Trans.Sine.easeInOut
         });
     }
 }
@@ -236,15 +262,11 @@ function getSubtreePlusTags(parentNodeId, tags) {
     return subtree;
 }
 
-function addTagsToTree(node, tags, previewResults, continuation) {
-    if (continuation === undefined) {
-        if (previewResults === undefined) {
-            continuation = function() {};
-        } else {
-            continuation = previewResults;
-        }
-        previewResults = false;
-    }
+function addTagsToTree(node, tags, continuation, preview) {
+    continuation = continuation || function() {};
+    if (preview === undefined) preview = previewResults;
+    console.log("addTagsToTree preview=" + preview);
+
     console.log(navigationStack);
     for (var t in tags) {
         if (tags[t] && !navigationStack.include(t) && !childrenIncludeTag(node.children, t)) {
@@ -259,7 +281,7 @@ function addTagsToTree(node, tags, previewResults, continuation) {
             node.children.push(n);
         }
     }
-    if (previewResults) {
+    if (preview) {
         var genPreview = function(children, i) {
             var child = children[i];
             //console.log(children);
@@ -286,18 +308,16 @@ function addTagsToTree(node, tags, previewResults, continuation) {
     }
 }
 
-function generateChildren(nodeId, tags, preview, continuation) {
-    if (continuation === undefined) {
-        continuation = preview;
-        preview = false;
-    }
+function generateChildren(nodeId, tags, continuation) {
+    continuation = continuation || function() {};
+
     var parentNode = $jit.json.getParent(root, nodeId);
     console.log("parent of " + nodeId + " is " + parentNode);
 
     var doSearch = function() {
         var tree = $jit.json.getSubtree(root,nodeId);
         tree.children = [];
-        addTagsToTree(tree, tags, preview, function() {
+        addTagsToTree(tree, tags, function() {
             runSearchFromNode(tree, continuation, NUM_EXPANDED_RESULTS);
         });
     };
@@ -374,8 +394,9 @@ function centerOnNode(node, modified) {
     var d = 1000;
     var doClick = function() {
         viz.onClick(node.id, {
-            transition: $jit.Trans.Expo.easeOut,
-            duration: d
+            transition: $jit.Trans.Sine.easeInOut,
+            duration: d,
+            hideLabels: false
         });
     };
     
@@ -384,7 +405,8 @@ function centerOnNode(node, modified) {
             viz.op.morph(root, {
                 type: 'fade:con',
                 duration: d,
-                transition: $jit.Trans.Expo.easeOut,
+                transition: $jit.Trans.Sine.easeInOut,
+                hideLabels: true
             });
         }
         doMorph();
@@ -392,4 +414,38 @@ function centerOnNode(node, modified) {
     } else {
         doClick();
     }
+}
+
+function removeNodesCond(parentNode, condition, continuation) {
+    var cs = parentNode.children;
+    if (!cs) {
+        continuation();
+        return;
+    }
+
+    var removeIds = [];
+    var keeps = [];
+    for (var i=0; i<cs.length; i++) {
+        if (condition(cs[i])) {
+            removeIds.push(cs[i].id);
+        } else {
+            keeps.push(cs[i]);
+        }
+    }
+    parentNode.children = keeps;
+    if (removeIds.length > 0) {
+        var d = 500;
+        viz.op.removeNode(removeIds, { 
+            type: 'fade:con',  
+            duration: d
+        });
+
+        setTimeout(continuation, d+50);
+    } else {
+        continuation();
+    }
+}
+
+function removePageNodes(parentNode, continuation) {
+    removeNodesCond(parentNode, function(node) { return node.data.category == "page" }, continuation);
 }
