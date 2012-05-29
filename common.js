@@ -353,33 +353,34 @@ function receiveRoot(res) {
 function receiveHistoryResultsForNode(node, items, continuation) {
     var tree = $jit.json.getSubtree(root, node.id);
     console.log("results " + node.name + "(" + items.length + ")");
-    if (items.length == 0) {
+    if (items.length == 0 && node.id != "root") {
         // remove tree if no matches
-        console.log("remove tree " + tree.name);
+        console.log("remove " + tree.id);
         var d = 1000;
 
         var parentTree = $jit.json.getParent(root, node.id);
         parentTree.children = parentTree.children.filter(function(child) {
             return child.id != node.id;
         });
-    }
-    for (var i=0; i<items.length; i++) {
-        if (items[i].tag) { // if it's a tag
-            // do nothing for now
-        } else {
-            var id = items[i].id;
-            var d = new Date(items[i].lastVisitTime);
-            var n = {
-                id: tree.id + '.' + items[i].id,
-                name: items[i].title,
-                data: {
-                    category: 'page',
-                    url: items[i].url,
-                    visited_date: d.format()
-                },
-                children: []
-            };
-            tree.children.push(n);
+    } else {
+        for (var i=0; i<items.length; i++) {
+            if (items[i].tag) { // if it's a tag
+                // do nothing for now
+            } else {
+                var id = items[i].id;
+                var d = new Date(items[i].lastVisitTime);
+                var n = {
+                    id: tree.id + '.' + items[i].id,
+                    name: items[i].title,
+                    data: {
+                        category: 'page',
+                        url: items[i].url,
+                        visited_date: d.format()
+                    },
+                    children: []
+                };
+                tree.children.push(n);
+            }
         }
     }
     continuation(tree);
@@ -387,8 +388,10 @@ function receiveHistoryResultsForNode(node, items, continuation) {
 
 // morphs tree if modified and centers viz on given node
 function centerOnNode(node, modified) {
+    console.log("before centerOnNode");
     var d = 1000;
     var doClick = function() {
+        console.log("before doClick");
         viz.onClick(node.id, {
             transition: $jit.Trans.Sine.easeInOut,
             duration: d,

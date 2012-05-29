@@ -210,23 +210,17 @@ function init(){
             if (relativeDepth == 0) {
                 //console.log("place label for new root: " + node.id);
                 style.size = 15;
-                //style.fontSize = "1.0em";
                 style.color = "#000000";
                 style.backgroundColor = "#F2F2F2";
             } else if (relativeDepth == 1) {
-                //style.fontSize = "0.8em";
                 style.color = "#ddd";
                 style.backgroundColor = "#777";
             } else if(relativeDepth == 2) {
-                //style.fontSize = "0.7em";
                 style.color = "#555";
                 style.backgroundColor = "#222";
             } else if (relativeDepth == 3) {
-                //style.fontSize = "0.4em";
                 style.borderStyle = "none";
                 style.backgroundColor = '';
-                // style.color = "#333";
-                //style.display = 'none';
             } else {
                 style.borderStyle = "none";
                 style.backgroundColor = '';
@@ -235,6 +229,8 @@ function init(){
 
             if (node.data.category == "tag") {
                 style.backgroundColor = "3a3";
+                style.color = "#000000";
+                style.fontStyle = "underline";
                 domElement.title = "Expand node."
             }
 
