@@ -177,22 +177,8 @@ function tagBoxClicked(tag) {
         var t = $jit.json.getSubtree(root, currentNodeId());
         var obj = {};
         obj[tag] = true;
-        addTagsToTree(t, obj, doMorph, true);
+        addTagsToTree(t, obj, doMorph, previewResults);
  
-            //if (t.id == "root" || (t.data.category == "tag" && t.children.length > NUM_PREVIEW_RESULTS)) {
-            //    console.log("## add node for tag: " + t.id);
-            //    addTagsToTree(t, availableTags, function() {
-            //        console.log("previewResults=" + previewResults + ", t.name=" + t.name);
-            //        if (previewResults && t.name == tag) {
-            //            console.log("generating preview for " + t.id);
-            //            runSearchFromNode(t, function() {
-            //                doMorph();
-            //            });
-            //        } else {
-            //            doMorph();
-            //        }
-            //    }, false);
-            //}
     }
     else {
         console.log("stop using tag: " + tag);
